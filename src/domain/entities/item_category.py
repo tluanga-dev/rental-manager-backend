@@ -49,6 +49,11 @@ class ItemCategory(BaseEntity):
         self._description = description
         self._touch_updated_at()
 
+    def update_is_active(self, is_active: bool) -> None:
+        """Update category active status."""
+        self._is_active = is_active
+        self._touch_updated_at()
+
     def clean_fields(self) -> None:
         """Apply business rules - ensure abbreviation is uppercase."""
         if self._abbreviation:
@@ -150,6 +155,11 @@ class ItemSubCategory(BaseEntity):
     def update_category(self, item_category_id: UUID) -> None:
         """Update parent category."""
         self._item_category_id = item_category_id
+        self._touch_updated_at()
+
+    def update_is_active(self, is_active: bool) -> None:
+        """Update subcategory active status."""
+        self._is_active = is_active
         self._touch_updated_at()
 
     def clean_fields(self) -> None:

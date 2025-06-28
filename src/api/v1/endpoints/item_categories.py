@@ -36,12 +36,13 @@ def get_subcategory_service(db: Session = Depends(get_db_session)) -> ItemSubCat
     return ItemSubCategoryService(subcategory_repository, category_repository)
 
 
-def category_to_response_schema(category) -> ItemCategoryResponseSchema:
+def category_to_response_schema(category, subcategory_count: int = 0) -> ItemCategoryResponseSchema:
     return ItemCategoryResponseSchema(
         id=category.id,
         name=category.name,
         abbreviation=category.abbreviation,
         description=category.description,
+        subcategory_count=subcategory_count,
         created_at=category.created_at,
         updated_at=category.updated_at,
         created_by=category.created_by,
@@ -130,10 +131,16 @@ async def list_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     category_service: ItemCategoryService = Depends(get_category_service),
+    subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
 ):
     categories = await category_service.list_categories(skip=skip, limit=limit)
     
-    category_responses = [category_to_response_schema(category) for category in categories]
+    # Get subcategory counts for each category
+    category_responses = []
+    for category in categories:
+        # Count active subcategories for this category
+        subcategory_count = await subcategory_service.count_subcategories_by_category(category.id)
+        category_responses.append(category_to_response_schema(category, subcategory_count))
     
     return ItemCategoriesListResponseSchema(
         categories=category_responses,
@@ -151,6 +158,65 @@ async def search_categories(
 ):
     categories = await category_service.search_categories(query, limit)
     return [category_to_response_schema(category) for category in categories]
+
+
+@router.get("/stats/overview")
+async def get_category_statistics(
+    category_service: ItemCategoryService = Depends(get_category_service),
+    subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
+):
+    """Get comprehensive category and subcategory statistics."""
+    # Get all categories and subcategories
+    categories = await category_service.list_categories(skip=0, limit=1000)
+    subcategories = await subcategory_service.list_subcategories(skip=0, limit=1000)
+    
+    # Calculate statistics
+    total_categories = len(categories)
+    active_categories = len([c for c in categories if c.is_active])
+    inactive_categories = total_categories - active_categories
+    
+    total_subcategories = len(subcategories)
+    
+    # Count categories with subcategories
+    categories_with_subcategories = 0
+    for category in categories:
+        subcategory_count = await subcategory_service.count_subcategories_by_category(category.id)
+        if subcategory_count > 0:
+            categories_with_subcategories += 1
+    
+    # Count categories/subcategories with descriptions
+    categories_with_description = len([c for c in categories if c.description])
+    subcategories_with_description = len([s for s in subcategories if s.description])
+    
+    # Abbreviation distribution
+    abbreviation_distribution = {}
+    for category in categories:
+        abbrev = category.abbreviation
+        abbreviation_distribution[abbrev] = abbreviation_distribution.get(abbrev, 0) + 1
+    
+    # Top abbreviations (by frequency)
+    top_abbreviations = [
+        {"abbreviation": abbrev, "count": count}
+        for abbrev, count in sorted(abbreviation_distribution.items(), key=lambda x: x[1], reverse=True)[:5]
+    ]
+    
+    # Recent items (simplified - just use total for now)
+    recent_categories_30_days = total_categories
+    recent_subcategories_30_days = total_subcategories
+    
+    return {
+        "total_categories": total_categories,
+        "active_categories": active_categories,
+        "inactive_categories": inactive_categories,
+        "total_subcategories": total_subcategories,
+        "categories_with_subcategories": categories_with_subcategories,
+        "categories_with_description": categories_with_description,
+        "subcategories_with_description": subcategories_with_description,
+        "abbreviation_distribution": abbreviation_distribution,
+        "recent_categories_30_days": recent_categories_30_days,
+        "recent_subcategories_30_days": recent_subcategories_30_days,
+        "top_abbreviations": top_abbreviations,
+    }
 
 
 @router.get("/by-name/{name}", response_model=ItemCategoryResponseSchema)

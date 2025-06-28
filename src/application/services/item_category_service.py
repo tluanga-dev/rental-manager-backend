@@ -157,3 +157,8 @@ class ItemSubCategoryService:
 
     async def search_subcategories(self, query: str, category_id: Optional[UUID] = None, limit: int = 10) -> List[ItemSubCategory]:
         return await self.search_subcategories_use_case.execute(query, category_id, limit)
+    
+    async def count_subcategories_by_category(self, category_id: UUID) -> int:
+        """Count the number of active subcategories for a given category."""
+        subcategories = await self.get_subcategories_by_category_use_case.execute(category_id, skip=0, limit=1000)
+        return len([sub for sub in subcategories if sub.is_active])

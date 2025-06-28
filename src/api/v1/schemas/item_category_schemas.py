@@ -67,6 +67,7 @@ class ItemCategoryResponseSchema(TimeStampedSchema):
     name: str
     abbreviation: str
     description: Optional[str] = None
+    subcategory_count: int = 0
 
 
 class ItemCategoriesListResponseSchema(BaseModel):
