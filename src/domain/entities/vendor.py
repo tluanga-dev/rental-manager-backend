@@ -49,27 +49,27 @@ class Vendor(BaseEntity):
     def update_name(self, name: str) -> None:
         """Update vendor name with validation."""
         self._name = self._validate_name(name)
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_email(self, email: Optional[str]) -> None:
         """Update vendor email with validation."""
         self._email = self._validate_email(email) if email else None
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_address(self, address: Optional[str]) -> None:
         """Update vendor address."""
         self._address = address
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_remarks(self, remarks: Optional[str]) -> None:
         """Update vendor remarks."""
         self._remarks = remarks
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_city(self, city: Optional[str]) -> None:
         """Update vendor city."""
         self._city = city
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_contact_info(
         self,
@@ -84,7 +84,7 @@ class Vendor(BaseEntity):
             self._address = address
         if city is not None:
             self._city = city
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def get_display_info(self) -> dict:
         """Get vendor information for display purposes."""

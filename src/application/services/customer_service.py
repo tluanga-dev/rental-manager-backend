@@ -97,7 +97,7 @@ class CustomerService:
 
     async def get_customer_contact_numbers(self, customer_id: UUID) -> List[ContactNumber]:
         """Get all contact numbers for a customer."""
-        return await self.contact_number_repository.find_by_entity("customer", customer_id)
+        return await self.contact_number_repository.find_by_entity("Customer", customer_id)
 
     async def add_contact_numbers(self, customer_id: UUID, contact_numbers: List[str], replace_all: bool = False) -> List[ContactNumber]:
         """Add contact numbers to a customer."""
@@ -108,7 +108,7 @@ class CustomerService:
 
     async def remove_contact_number(self, customer_id: UUID, contact_number: str) -> bool:
         """Remove a specific contact number from a customer."""
-        existing_contacts = await self.contact_number_repository.find_by_entity("customer", customer_id)
+        existing_contacts = await self.contact_number_repository.find_by_entity("Customer", customer_id)
         for contact in existing_contacts:
             if contact.phone_number.number == contact_number:
                 return await self.contact_number_repository.delete(contact.id)
@@ -122,7 +122,7 @@ class CustomerService:
                 phone_number = PhoneNumber(number)
                 contact = ContactNumber(
                     phone_number=phone_number,
-                    entity_type="customer",
+                    entity_type="Customer",
                     entity_id=customer_id
                 )
                 saved_contact = await self.contact_number_repository.save(contact)
@@ -135,7 +135,7 @@ class CustomerService:
     async def _replace_contact_numbers(self, customer_id: UUID, contact_numbers: List[str]) -> List[ContactNumber]:
         """Helper to replace all contact numbers for a customer."""
         # First delete all existing contact numbers
-        existing_contacts = await self.contact_number_repository.find_by_entity("customer", customer_id)
+        existing_contacts = await self.contact_number_repository.find_by_entity("Customer", customer_id)
         for contact in existing_contacts:
             await self.contact_number_repository.delete(contact.id)
         

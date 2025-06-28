@@ -60,7 +60,7 @@ async def test_create_unit_duplicate_name(unit_service, mock_repository):
 
     existing_unit = UnitOfMeasurement(
         name=name,
-        abbreviation="existing_kg",
+        abbreviation="kg2",
         entity_id=uuid4(),
     )
     mock_repository.get_by_name.return_value = existing_unit

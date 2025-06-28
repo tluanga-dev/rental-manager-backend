@@ -37,17 +37,17 @@ class ItemCategory(BaseEntity):
     def update_name(self, name: str) -> None:
         """Update category name with validation."""
         self._name = self._validate_name(name)
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_abbreviation(self, abbreviation: str) -> None:
         """Update category abbreviation with validation."""
         self._abbreviation = self._validate_and_clean_abbreviation(abbreviation)
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_description(self, description: Optional[str]) -> None:
         """Update category description."""
         self._description = description
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def clean_fields(self) -> None:
         """Apply business rules - ensure abbreviation is uppercase."""
@@ -135,22 +135,22 @@ class ItemSubCategory(BaseEntity):
     def update_name(self, name: str) -> None:
         """Update subcategory name with validation."""
         self._name = self._validate_name(name)
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_abbreviation(self, abbreviation: str) -> None:
         """Update subcategory abbreviation with validation."""
         self._abbreviation = self._validate_and_clean_abbreviation(abbreviation)
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_description(self, description: Optional[str]) -> None:
         """Update subcategory description."""
         self._description = description
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def update_category(self, item_category_id: UUID) -> None:
         """Update parent category."""
         self._item_category_id = item_category_id
-        self._update_timestamp()
+        self._touch_updated_at()
 
     def clean_fields(self) -> None:
         """Apply business rules - ensure abbreviation is uppercase."""

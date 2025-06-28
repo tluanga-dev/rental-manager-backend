@@ -34,6 +34,9 @@ class ItemCategoryService:
         self.delete_category_use_case = DeleteItemCategoryUseCase(category_repository)
         self.list_categories_use_case = ListItemCategoriesUseCase(category_repository)
         self.search_categories_use_case = SearchItemCategoriesUseCase(category_repository)
+        # Subcategory use cases - Note: Using same repository for both subcategory and category operations
+        self.create_subcategory_use_case = CreateItemSubCategoryUseCase(category_repository, category_repository)
+        self.get_subcategories_by_category_use_case = GetItemSubCategoriesByCategoryUseCase(category_repository)
 
     async def create_category(
         self,
@@ -71,8 +74,28 @@ class ItemCategoryService:
     async def list_categories(self, skip: int = 0, limit: int = 100) -> List[ItemCategory]:
         return await self.list_categories_use_case.execute(skip, limit)
 
-    async def search_categories(self, query: str, limit: int = 10) -> List[ItemCategory]:
+    async def search_categories(self, query: str, search_fields: Optional[List[str]] = None, limit: int = 10) -> List[ItemCategory]:
+        # Note: search_fields parameter is ignored as the underlying use case doesn't support field-specific search
         return await self.search_categories_use_case.execute(query, limit)
+
+    async def create_subcategory(
+        self,
+        name: str,
+        abbreviation: str,
+        item_category_id: UUID,
+        description: Optional[str] = None,
+        created_by: Optional[str] = None,
+    ) -> ItemSubCategory:
+        return await self.create_subcategory_use_case.execute(
+            name, abbreviation, item_category_id, description, created_by
+        )
+
+    async def get_category_with_subcategories(self, category_id: UUID) -> tuple[Optional[ItemCategory], List[ItemSubCategory]]:
+        category = await self.get_category_use_case.execute(category_id)
+        subcategories = []
+        if category:
+            subcategories = await self.get_subcategories_by_category_use_case.execute(category_id)
+        return category, subcategories
 
 
 class ItemSubCategoryService:
