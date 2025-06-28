@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.v1.router import api_router
@@ -21,7 +21,17 @@ app.add_middleware(
     allow_headers=settings.cors_allow_headers,
 )
 
+# Main API router for /api/v1
 app.include_router(api_router)
+
+# New router for /api prefix
+api_prefix_router = APIRouter(prefix="/api")
+
+@api_prefix_router.get("/health")
+async def api_health_check():
+    return {"status": "healthy", "service": settings.app_name, "path": "/api/health"}
+
+app.include_router(api_prefix_router)
 
 
 @app.on_event("startup")

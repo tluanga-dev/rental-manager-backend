@@ -20,10 +20,10 @@ class InventoryItemMasterCreateSchema(CreateBaseSchema):
     brand: Optional[str] = Field(None, max_length=255, description="Product brand or manufacturer name")
     manufacturer_part_number: Optional[str] = Field(None, max_length=255, description="Manufacturer's part number")
     product_id: Optional[str] = Field(None, max_length=255, description="Additional product identifier")
-    weight: Optional[Decimal] = Field(None, ge=0, decimal_places=3, description="Weight in kilograms")
-    length: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Length in centimeters")
-    width: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Width in centimeters")
-    height: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Height in centimeters")
+    weight: Optional[Decimal] = Field(None, ge=0, description="Weight in kilograms")
+    length: Optional[Decimal] = Field(None, ge=0, description="Length in centimeters")
+    width: Optional[Decimal] = Field(None, ge=0, description="Width in centimeters")
+    height: Optional[Decimal] = Field(None, ge=0, description="Height in centimeters")
     renting_period: int = Field(1, ge=1, description="Default rental period in days")
     quantity: int = Field(0, ge=0, description="Initial total stock quantity")
 
@@ -65,10 +65,10 @@ class InventoryItemMasterUpdateSchema(UpdateBaseSchema):
     brand: Optional[str] = Field(None, max_length=255, description="Product brand or manufacturer name")
     manufacturer_part_number: Optional[str] = Field(None, max_length=255, description="Manufacturer's part number")
     product_id: Optional[str] = Field(None, max_length=255, description="Additional product identifier")
-    weight: Optional[Decimal] = Field(None, ge=0, decimal_places=3, description="Weight in kilograms")
-    length: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Length in centimeters")
-    width: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Width in centimeters")
-    height: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Height in centimeters")
+    weight: Optional[Decimal] = Field(None, ge=0, description="Weight in kilograms")
+    length: Optional[Decimal] = Field(None, ge=0, description="Length in centimeters")
+    width: Optional[Decimal] = Field(None, ge=0, description="Width in centimeters")
+    height: Optional[Decimal] = Field(None, ge=0, description="Height in centimeters")
     renting_period: Optional[int] = Field(None, ge=1, description="Default rental period in days")
     quantity: Optional[int] = Field(None, ge=0, description="Total stock quantity")
 
@@ -149,7 +149,7 @@ class InventoryItemMasterQuantityUpdateSchema(BaseModel):
 
 
 class InventoryItemMasterDimensionsUpdateSchema(BaseModel):
-    weight: Optional[Decimal] = Field(None, ge=0, decimal_places=3, description="Weight in kilograms")
-    length: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Length in centimeters")
-    width: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Width in centimeters")
-    height: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Height in centimeters")
+    weight: Optional[Decimal] = Field(None, ge=0, description="Weight in kilograms")
+    length: Optional[Decimal] = Field(None, ge=0, description="Length in centimeters")
+    width: Optional[Decimal] = Field(None, ge=0, description="Width in centimeters")
+    height: Optional[Decimal] = Field(None, ge=0, description="Height in centimeters")

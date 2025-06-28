@@ -44,7 +44,7 @@ def upgrade() -> None:
         sa.Column('quantity', sa.Integer(), nullable=False, server_default='0'),
         sa.ForeignKeyConstraint(['item_sub_category_id'], ['item_subcategories.id'], ),
         sa.ForeignKeyConstraint(['packaging_id'], ['item_packaging.id'], ),
-        sa.ForeignKeyConstraint(['unit_of_measurement_id'], ['unit_of_measurements.id'], ),
+        sa.ForeignKeyConstraint(['unit_of_measurement_id'], ['unit_of_measurement.id'], ),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('name'),
         sa.UniqueConstraint('sku'),

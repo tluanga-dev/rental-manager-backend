@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Index, ForeignKey, UniqueConstraint, Integer, Boolean, Enum, DECIMAL, CheckConstraint
+from sqlalchemy import Column, String, Text, Index, ForeignKey, UniqueConstraint, Integer, Boolean, Enum, DECIMAL, CheckConstraint, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import enum
@@ -168,7 +168,7 @@ class InventoryItemMasterModel(TimeStampedModel):
     description = Column(Text, nullable=True)
     contents = Column(Text, nullable=True)
     item_sub_category_id = Column(UUID(as_uuid=True), ForeignKey("item_subcategories.id"), nullable=False)
-    unit_of_measurement_id = Column(UUID(as_uuid=True), ForeignKey("unit_of_measurements.id"), nullable=False)
+    unit_of_measurement_id = Column(UUID(as_uuid=True), ForeignKey("unit_of_measurement.id"), nullable=False)
     packaging_id = Column(UUID(as_uuid=True), ForeignKey("item_packaging.id"), nullable=True)
     tracking_type = Column(Enum(TrackingType), nullable=False)
     is_consumable = Column(Boolean, default=False, nullable=False)
@@ -253,4 +253,86 @@ class InventoryItemStockMovementModel(TimeStampedModel):
     __table_args__ = (
         Index('ix_inventory_movements_type', 'movement_type'),
         Index('ix_inventory_movements_created_at', 'created_at'),
+    )
+
+
+class PurchaseOrderStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    ORDERED = "ORDERED"
+    PARTIAL_RECEIVED = "PARTIAL_RECEIVED"
+    RECEIVED = "RECEIVED"
+    CANCELLED = "CANCELLED"
+
+
+class PurchaseOrderModel(TimeStampedModel):
+    __tablename__ = "purchase_orders"
+
+    order_number = Column(String(50), nullable=False, unique=True, index=True)
+    vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendors.id"), nullable=False)
+    order_date = Column(Date, nullable=False)
+    expected_delivery_date = Column(Date, nullable=True)
+    status = Column(Enum(PurchaseOrderStatus), default=PurchaseOrderStatus.DRAFT, nullable=False)
+    total_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    total_tax_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    total_discount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    grand_total = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    reference_number = Column(String(255), nullable=True, index=True)
+    invoice_number = Column(String(255), nullable=True, index=True)
+    notes = Column(Text, nullable=True)
+
+    # Relationships
+    vendor = relationship("VendorModel", backref="purchase_orders")
+    line_items = relationship("PurchaseOrderLineItemModel", back_populates="purchase_order", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint('total_amount >= 0', name='check_positive_total_amount'),
+        CheckConstraint('total_tax_amount >= 0', name='check_positive_total_tax'),
+        CheckConstraint('total_discount >= 0', name='check_positive_total_discount'),
+        CheckConstraint('grand_total >= 0', name='check_positive_grand_total'),
+        Index('ix_purchase_orders_status', 'status'),
+        Index('ix_purchase_orders_order_date', 'order_date'),
+        Index('ix_purchase_orders_vendor', 'vendor_id'),
+    )
+
+
+class PurchaseOrderLineItemModel(TimeStampedModel):
+    __tablename__ = "purchase_order_line_items"
+
+    purchase_order_id = Column(UUID(as_uuid=True), ForeignKey("purchase_orders.id"), nullable=False)
+    inventory_item_master_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(DECIMAL(12, 2), nullable=False)
+    serial_number = Column(String(255), nullable=True, index=True)
+    discount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    tax_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    received_quantity = Column(Integer, default=0, nullable=False)
+    reference_number = Column(String(255), nullable=True)
+    warranty_period_type = Column(Enum(WarrantyPeriodType), nullable=True)
+    warranty_period = Column(Integer, nullable=True)
+    rental_rate = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    replacement_cost = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    late_fee_rate = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    sell_tax_rate = Column(Integer, default=0, nullable=False)
+    rent_tax_rate = Column(Integer, default=0, nullable=False)
+    rentable = Column(Boolean, default=True, nullable=False)
+    sellable = Column(Boolean, default=False, nullable=False)
+    selling_price = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+
+    # Relationships
+    purchase_order = relationship("PurchaseOrderModel", back_populates="line_items")
+    inventory_item_master = relationship("InventoryItemMasterModel", backref="purchase_order_line_items")
+    warehouse = relationship("WarehouseModel", backref="purchase_order_line_items")
+
+    __table_args__ = (
+        CheckConstraint('quantity > 0', name='check_positive_quantity'),
+        CheckConstraint('unit_price >= 0', name='check_non_negative_unit_price'),
+        CheckConstraint('discount >= 0', name='check_non_negative_discount'),
+        CheckConstraint('tax_amount >= 0', name='check_non_negative_tax'),
+        CheckConstraint('received_quantity >= 0', name='check_non_negative_received_qty'),
+        CheckConstraint('sell_tax_rate >= 0 AND sell_tax_rate <= 100', name='check_sell_tax_rate_range'),
+        CheckConstraint('rent_tax_rate >= 0 AND rent_tax_rate <= 100', name='check_rent_tax_rate_range'),
+        Index('ix_purchase_order_line_items_serial', 'serial_number'),
+        Index('ix_purchase_order_line_items_inventory', 'inventory_item_master_id'),
+        Index('ix_purchase_order_line_items_warehouse', 'warehouse_id'),
     )
