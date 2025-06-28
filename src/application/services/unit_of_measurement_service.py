@@ -100,3 +100,6 @@ class UnitOfMeasurementService:
 
     async def search_units(self, name: str, skip: int = 0, limit: int = 100) -> List[UnitOfMeasurement]:
         return await self.unit_repository.search_by_name(name, skip, limit)
+
+    async def count_units(self, active_only: bool = False) -> int:
+        return await self.unit_repository.count(active_only)

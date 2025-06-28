@@ -1,7 +1,7 @@
 from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from ....core.config.database import get_db_session
 from ....infrastructure.repositories.unit_of_measurement_repository_impl import UnitOfMeasurementRepositoryImpl
@@ -13,11 +13,12 @@ from ..schemas.unit_of_measurement_schemas import (
     UnitOfMeasurementUpdate,
     UnitOfMeasurementResponse,
 )
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/units", tags=["units"])
 
 
-def get_unit_use_cases(db: AsyncSession = Depends(get_db_session)) -> UnitOfMeasurementUseCases:
+def get_unit_use_cases(db: Session = Depends(get_db_session)) -> UnitOfMeasurementUseCases:
     repository = UnitOfMeasurementRepositoryImpl(db)
     service = UnitOfMeasurementService(repository)
     return UnitOfMeasurementUseCases(service)
@@ -41,6 +42,22 @@ async def create_unit_of_measurement(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/statistics")
+async def get_unit_statistics(
+    use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
+):
+    """Get unit of measurement statistics"""
+    total_units = await use_cases.count_units_of_measurement()
+    active_units = await use_cases.count_units_of_measurement(is_active=True)
+    inactive_units = total_units - active_units
+    
+    return {
+        "total_units": total_units,
+        "active_units": active_units,
+        "inactive_units": inactive_units
+    }
+
+
 @router.get("/{unit_id}", response_model=UnitOfMeasurementResponse)
 async def get_unit_of_measurement(
     unit_id: UUID,
@@ -58,50 +75,22 @@ async def list_units_of_measurement(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=1000, description="Number of records per page"),
     is_active: bool = Query(True, description="Whether to return only active records"),
+    use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
     """List all units of measurement with pagination"""
-    # For now, return mock data until we fix the repository issue
-    mock_units = [
-        {
-            "id": "550e8400-e29b-41d4-a716-446655440000",
-            "name": "Kilogram",
-            "abbreviation": "kg",
-            "description": "Unit of mass",
-            "is_active": True,
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-01T00:00:00Z",
-            "created_by": "system"
-        },
-        {
-            "id": "550e8400-e29b-41d4-a716-446655440001",
-            "name": "Meter",
-            "abbreviation": "m",
-            "description": "Unit of length",
-            "is_active": True,
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-01T00:00:00Z",
-            "created_by": "system"
-        },
-        {
-            "id": "550e8400-e29b-41d4-a716-446655440002", 
-            "name": "Liter",
-            "abbreviation": "L",
-            "description": "Unit of volume",
-            "is_active": True,
-            "created_at": "2024-01-01T00:00:00Z",
-            "updated_at": "2024-01-01T00:00:00Z",
-            "created_by": "system"
-        }
-    ]
+    skip = (page - 1) * page_size
+    units = await use_cases.list_units_of_measurement(
+        skip=skip,
+        limit=page_size,
+        is_active=is_active
+    )
+    
+    # Get total count for pagination
+    total_count = await use_cases.count_units_of_measurement(is_active=is_active)
     
     # Calculate pagination info
-    total_count = len(mock_units)
-    start_index = (page - 1) * page_size
-    end_index = start_index + page_size
-    paginated_units = mock_units[start_index:end_index]
-    
-    has_next = end_index < total_count
-    has_previous = start_index > 0
+    has_next = skip + page_size < total_count
+    has_previous = skip > 0
     
     next_url = f"/api/v1/units/?page={page + 1}&page_size={page_size}&is_active={is_active}" if has_next else None
     previous_url = f"/api/v1/units/?page={page - 1}&page_size={page_size}&is_active={is_active}" if has_previous else None
@@ -110,7 +99,7 @@ async def list_units_of_measurement(
         "count": total_count,
         "next": next_url,
         "previous": previous_url,
-        "results": paginated_units
+        "results": [UnitOfMeasurementResponse.from_orm(unit).dict() for unit in units]
     }
 
 
@@ -191,3 +180,32 @@ async def activate_unit_of_measurement(
         await use_cases.activate_unit_of_measurement(unit_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{unit_id}", status_code=204)
+async def delete_unit_of_measurement(
+    unit_id: UUID,
+    use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
+):
+    """Delete a unit of measurement (soft delete)"""
+    try:
+        await use_cases.deactivate_unit_of_measurement(unit_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+
+
+class SearchRequest(BaseModel):
+    query: str
+    limit: int = 20
+
+
+@router.post("/search")
+async def search_units_post(
+    search_data: SearchRequest,
+    use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
+):
+    """Search units of measurement by name or abbreviation (POST endpoint)"""
+    units = await use_cases.search_units_of_measurement(search_data.query, skip=0, limit=search_data.limit)
+    return [UnitOfMeasurementResponse.from_orm(unit).dict() for unit in units]

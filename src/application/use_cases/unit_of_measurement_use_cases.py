@@ -37,10 +37,10 @@ class UnitOfMeasurementUseCases:
         return await self.unit_service.get_unit_by_abbreviation(abbreviation)
 
     async def list_units_of_measurement(
-        self, skip: int = 0, limit: int = 100, active_only: bool = True
+        self, skip: int = 0, limit: int = 100, is_active: bool = True
     ) -> List[UnitOfMeasurement]:
         """List all units of measurement with pagination"""
-        return await self.unit_service.get_all_units(skip, limit, active_only)
+        return await self.unit_service.get_all_units(skip, limit, is_active)
 
     async def update_unit_of_measurement(
         self,
@@ -70,3 +70,10 @@ class UnitOfMeasurementUseCases:
     ) -> List[UnitOfMeasurement]:
         """Search units of measurement by name or abbreviation"""
         return await self.unit_service.search_units(name, skip, limit)
+
+    async def count_units_of_measurement(self, is_active: Optional[bool] = None) -> int:
+        """Count units of measurement"""
+        # If is_active is True or False, use active_only accordingly
+        # If is_active is None, count all units (active_only=False)
+        active_only = is_active if is_active is not None else False
+        return await self.unit_service.count_units(active_only)

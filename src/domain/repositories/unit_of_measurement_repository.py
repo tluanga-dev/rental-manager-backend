@@ -45,3 +45,8 @@ class UnitOfMeasurementRepository(ABC):
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[UnitOfMeasurement]:
         """Search units of measurement by name"""
         pass
+
+    @abstractmethod
+    async def count(self, active_only: bool = False) -> int:
+        """Count units of measurement"""
+        pass

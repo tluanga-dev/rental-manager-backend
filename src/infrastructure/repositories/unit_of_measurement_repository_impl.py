@@ -1,7 +1,7 @@
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_
+from sqlalchemy.orm import Session
+from sqlalchemy import select, and_, or_, func
 
 from ...domain.entities.unit_of_measurement import UnitOfMeasurement
 from ...domain.repositories.unit_of_measurement_repository import UnitOfMeasurementRepository
@@ -9,7 +9,7 @@ from ..database.models import UnitOfMeasurementModel
 
 
 class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: Session):
         self.db_session = db_session
 
     async def create(self, unit_of_measurement: UnitOfMeasurement) -> UnitOfMeasurement:
@@ -24,25 +24,25 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
             is_active=unit_of_measurement.is_active,
         )
         self.db_session.add(db_unit)
-        await self.db_session.commit()
-        await self.db_session.refresh(db_unit)
+        self.db_session.commit()
+        self.db_session.refresh(db_unit)
         return self._model_to_entity(db_unit)
 
     async def get_by_id(self, unit_id: UUID) -> Optional[UnitOfMeasurement]:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.id == unit_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
         return self._model_to_entity(db_unit) if db_unit else None
 
     async def get_by_name(self, name: str) -> Optional[UnitOfMeasurement]:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.name == name)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
         return self._model_to_entity(db_unit) if db_unit else None
 
     async def get_by_abbreviation(self, abbreviation: str) -> Optional[UnitOfMeasurement]:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.abbreviation == abbreviation)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
         return self._model_to_entity(db_unit) if db_unit else None
 
@@ -52,13 +52,13 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
             stmt = stmt.where(UnitOfMeasurementModel.is_active == True)
         stmt = stmt.offset(skip).limit(limit).order_by(UnitOfMeasurementModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_units = result.scalars().all()
         return [self._model_to_entity(db_unit) for db_unit in db_units]
 
     async def update(self, unit_of_measurement: UnitOfMeasurement) -> UnitOfMeasurement:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.id == unit_of_measurement.id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
         
         if not db_unit:
@@ -70,20 +70,20 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
         db_unit.updated_at = unit_of_measurement.updated_at
         db_unit.is_active = unit_of_measurement.is_active
 
-        await self.db_session.commit()
-        await self.db_session.refresh(db_unit)
+        self.db_session.commit()
+        self.db_session.refresh(db_unit)
         return self._model_to_entity(db_unit)
 
     async def delete(self, unit_id: UUID) -> bool:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.id == unit_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
         
         if not db_unit:
             return False
 
         db_unit.is_active = False
-        await self.db_session.commit()
+        self.db_session.commit()
         return True
 
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[UnitOfMeasurement]:
@@ -97,9 +97,16 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
             )
         ).offset(skip).limit(limit).order_by(UnitOfMeasurementModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_units = result.scalars().all()
         return [self._model_to_entity(db_unit) for db_unit in db_units]
+
+    async def count(self, active_only: bool = False) -> int:
+        stmt = select(func.count()).select_from(UnitOfMeasurementModel)
+        if active_only:
+            stmt = stmt.where(UnitOfMeasurementModel.is_active == True)
+        result = self.db_session.execute(stmt)
+        return result.scalar() or 0
 
     def _model_to_entity(self, model: UnitOfMeasurementModel) -> UnitOfMeasurement:
         return UnitOfMeasurement(
