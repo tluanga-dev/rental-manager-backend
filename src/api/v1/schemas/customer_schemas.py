@@ -21,12 +21,38 @@ class AddressSchema(BaseModel):
         return v.strip()
 
 
+class ContactNumberCreateSchema(BaseModel):
+    number: str = Field(..., min_length=1, max_length=20, description="Phone number")
+
+    @validator('number')
+    def validate_phone_number(cls, v):
+        import re
+        if not v.strip():
+            raise ValueError('Phone number cannot be empty')
+        
+        # Clean the number - remove all non-digit characters except + at start
+        cleaned = re.sub(r'[^\d+]', '', v.strip())
+        
+        # Basic validation - must contain digits
+        if not re.search(r'\d', cleaned):
+            raise ValueError('Phone number must contain at least one digit')
+        
+        # Length validation (after cleaning)
+        if len(cleaned) < 7 or len(cleaned) > 20:
+            raise ValueError('Phone number must be between 7-20 characters after cleaning')
+        
+        return cleaned
+
+
 class CustomerCreateSchema(CreateBaseSchema):
     name: str = Field(..., min_length=2, max_length=255, description="Customer name")
     email: Optional[str] = Field(None, max_length=255, description="Customer email address")
     address: Optional[str] = Field(None, description="Customer address")
     remarks: Optional[str] = Field(None, max_length=255, description="Additional remarks")
     city: Optional[str] = Field(None, max_length=255, description="Customer city")
+    
+    # Contact numbers
+    contact_numbers: Optional[List[ContactNumberCreateSchema]] = Field(None, description="List of contact numbers")
     
     # Backward compatibility
     address_vo: Optional[AddressSchema] = Field(None, description="Structured address (backward compatibility)")
@@ -62,6 +88,9 @@ class CustomerUpdateSchema(UpdateBaseSchema):
     address: Optional[str] = Field(None, description="Customer address")
     remarks: Optional[str] = Field(None, max_length=255, description="Additional remarks")
     city: Optional[str] = Field(None, max_length=255, description="Customer city")
+    
+    # Contact numbers - when provided, this will replace all existing contact numbers
+    contact_numbers: Optional[List[ContactNumberCreateSchema]] = Field(None, description="List of contact numbers (replaces all existing)")
     
     # Backward compatibility
     address_vo: Optional[AddressSchema] = Field(None, description="Structured address (backward compatibility)")
@@ -147,3 +176,9 @@ class CustomerWithContactsSchema(BaseModel):
 class CustomerBulkCreateSchema(BaseModel):
     customers: List[CustomerCreateSchema] = Field(..., min_items=1, max_items=100)
     skip_duplicates: bool = Field(True, description="Skip duplicate entries instead of failing")
+
+
+class CustomerContactUpdateSchema(BaseModel):
+    """Schema for adding/removing contact numbers to/from a customer"""
+    contact_numbers: List[ContactNumberCreateSchema] = Field(..., description="Contact numbers to add/replace")
+    replace_all: bool = Field(False, description="If True, replace all existing contacts. If False, add to existing")

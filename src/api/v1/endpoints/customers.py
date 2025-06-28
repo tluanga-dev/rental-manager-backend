@@ -8,21 +8,25 @@ from ....application.services.customer_service import CustomerService
 from ....domain.value_objects.address import Address
 from ....core.config.database import get_db_session
 from ....infrastructure.repositories.customer_repository_impl import SQLAlchemyCustomerRepository
+from ....infrastructure.repositories.contact_number_repository_impl import SQLAlchemyContactNumberRepository
 from ..schemas.customer_schemas import (
     CustomerCreateSchema,
     CustomerUpdateSchema,
     CustomerResponseSchema,
     CustomersListResponseSchema,
     CustomerSearchSchema,
+    CustomerContactUpdateSchema,
     AddressSchema,
 )
+from ..schemas.contact_number_schemas import ContactNumberResponseSchema
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
 
 def get_customer_service(db: Session = Depends(get_db_session)) -> CustomerService:
     customer_repository = SQLAlchemyCustomerRepository(db)
-    return CustomerService(customer_repository)
+    contact_number_repository = SQLAlchemyContactNumberRepository(db)
+    return CustomerService(customer_repository, contact_number_repository)
 
 
 def address_schema_to_value_object(address_schema: AddressSchema) -> Address:
@@ -45,11 +49,28 @@ def address_value_object_to_schema(address: Address) -> AddressSchema:
     )
 
 
-def customer_to_response_schema(customer) -> CustomerResponseSchema:
+async def customer_to_response_schema(customer, customer_service: CustomerService = None) -> CustomerResponseSchema:
     # Convert address_vo to schema if it exists
     address_vo_schema = None
     if customer.address_vo:
         address_vo_schema = address_value_object_to_schema(customer.address_vo)
+    
+    # Get contact numbers if service is provided
+    contact_numbers = None
+    if customer_service:
+        contacts = await customer_service.get_customer_contact_numbers(customer.id)
+        contact_numbers = [
+            ContactNumberResponseSchema(
+                id=contact.id,
+                number=contact.phone_number.number,
+                entity_type=contact.entity_type,
+                entity_id=contact.entity_id,
+                created_at=contact.created_at,
+                updated_at=contact.updated_at,
+                created_by=contact.created_by,
+                is_active=contact.is_active,
+            ) for contact in contacts
+        ]
     
     return CustomerResponseSchema(
         id=customer.id,
@@ -59,6 +80,7 @@ def customer_to_response_schema(customer) -> CustomerResponseSchema:
         remarks=customer.remarks,
         city=customer.city,
         address_vo=address_vo_schema,
+        contact_numbers=contact_numbers,
         created_at=customer.created_at,
         updated_at=customer.updated_at,
         created_by=customer.created_by,
@@ -77,6 +99,11 @@ async def create_customer(
         if customer_data.address_vo:
             address_vo = address_schema_to_value_object(customer_data.address_vo)
         
+        # Extract contact numbers
+        contact_numbers = None
+        if customer_data.contact_numbers:
+            contact_numbers = [contact.number for contact in customer_data.contact_numbers]
+        
         customer = await customer_service.create_customer(
             name=customer_data.name,
             email=customer_data.email,
@@ -84,10 +111,11 @@ async def create_customer(
             remarks=customer_data.remarks,
             city=customer_data.city,
             address_vo=address_vo,
+            contact_numbers=contact_numbers,
             created_by=customer_data.created_by
         )
         
-        return customer_to_response_schema(customer)
+        return await customer_to_response_schema(customer, customer_service)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -101,7 +129,7 @@ async def get_customer(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    return customer_to_response_schema(customer)
+    return await customer_to_response_schema(customer, customer_service)
 
 
 @router.put("/{customer_id}", response_model=CustomerResponseSchema)
@@ -116,6 +144,11 @@ async def update_customer(
         if customer_data.address_vo:
             address_vo = address_schema_to_value_object(customer_data.address_vo)
         
+        # Extract contact numbers if provided
+        contact_numbers = None
+        if customer_data.contact_numbers is not None:
+            contact_numbers = [contact.number for contact in customer_data.contact_numbers]
+        
         customer = await customer_service.update_customer(
             customer_id=customer_id,
             name=customer_data.name,
@@ -124,10 +157,11 @@ async def update_customer(
             remarks=customer_data.remarks,
             city=customer_data.city,
             address_vo=address_vo,
+            contact_numbers=contact_numbers,
             is_active=customer_data.is_active
         )
         
-        return customer_to_response_schema(customer)
+        return await customer_to_response_schema(customer, customer_service)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -150,7 +184,7 @@ async def list_customers(
 ):
     customers = await customer_service.list_customers(skip=skip, limit=limit)
     
-    customer_responses = [customer_to_response_schema(customer) for customer in customers]
+    customer_responses = [await customer_to_response_schema(customer, customer_service) for customer in customers]
     
     return CustomersListResponseSchema(
         customers=customer_responses,
@@ -168,7 +202,7 @@ async def search_customers(
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     customers = await customer_service.search_customers(query, search_fields, limit)
-    return [customer_to_response_schema(customer) for customer in customers]
+    return [await customer_to_response_schema(customer, customer_service) for customer in customers]
 
 
 @router.get("/by-email/{email}", response_model=CustomerResponseSchema)
@@ -180,7 +214,7 @@ async def get_customer_by_email(
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
     
-    return customer_to_response_schema(customer)
+    return await customer_to_response_schema(customer, customer_service)
 
 
 @router.get("/by-city/{city}", response_model=List[CustomerResponseSchema])
@@ -190,4 +224,83 @@ async def get_customers_by_city(
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     customers = await customer_service.get_customers_by_city(city, limit)
-    return [customer_to_response_schema(customer) for customer in customers]
+    return [await customer_to_response_schema(customer, customer_service) for customer in customers]
+
+
+# Contact Number Management Endpoints
+
+@router.get("/{customer_id}/contacts", response_model=List[ContactNumberResponseSchema])
+async def get_customer_contacts(
+    customer_id: UUID,
+    customer_service: CustomerService = Depends(get_customer_service),
+):
+    """Get all contact numbers for a customer."""
+    # Check if customer exists
+    customer = await customer_service.get_customer(customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    contacts = await customer_service.get_customer_contact_numbers(customer_id)
+    return [
+        ContactNumberResponseSchema(
+            id=contact.id,
+            number=contact.phone_number.number,
+            entity_type=contact.entity_type,
+            entity_id=contact.entity_id,
+            created_at=contact.created_at,
+            updated_at=contact.updated_at,
+            created_by=contact.created_by,
+            is_active=contact.is_active,
+        ) for contact in contacts
+    ]
+
+
+@router.put("/{customer_id}/contacts", response_model=List[ContactNumberResponseSchema])
+async def update_customer_contacts(
+    customer_id: UUID,
+    contact_data: CustomerContactUpdateSchema,
+    customer_service: CustomerService = Depends(get_customer_service),
+):
+    """Add or replace contact numbers for a customer."""
+    try:
+        # Check if customer exists
+        customer = await customer_service.get_customer(customer_id)
+        if not customer:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        
+        contact_numbers = [contact.number for contact in contact_data.contact_numbers]
+        contacts = await customer_service.add_contact_numbers(
+            customer_id, contact_numbers, replace_all=contact_data.replace_all
+        )
+        
+        return [
+            ContactNumberResponseSchema(
+                id=contact.id,
+                number=contact.phone_number.number,
+                entity_type=contact.entity_type,
+                entity_id=contact.entity_id,
+                created_at=contact.created_at,
+                updated_at=contact.updated_at,
+                created_by=contact.created_by,
+                is_active=contact.is_active,
+            ) for contact in contacts
+        ]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{customer_id}/contacts/{contact_number}", status_code=204)
+async def remove_customer_contact(
+    customer_id: UUID,
+    contact_number: str,
+    customer_service: CustomerService = Depends(get_customer_service),
+):
+    """Remove a specific contact number from a customer."""
+    # Check if customer exists
+    customer = await customer_service.get_customer(customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    
+    removed = await customer_service.remove_contact_number(customer_id, contact_number)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Contact number not found")
