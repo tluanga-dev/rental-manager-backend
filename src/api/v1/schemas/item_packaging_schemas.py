@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
 
-from ..base_schemas import TimeStampedSchema, CreateBaseSchema, UpdateBaseSchema
+from .base_schemas import TimeStampedSchema, CreateBaseSchema, UpdateBaseSchema
 
 
 class ItemPackagingBase(BaseModel):

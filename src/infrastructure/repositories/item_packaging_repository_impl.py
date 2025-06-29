@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
 from ...domain.entities.item_packaging import ItemPackaging
@@ -9,7 +9,7 @@ from ..database.models import ItemPackagingModel
 
 
 class ItemPackagingRepositoryImpl(ItemPackagingRepository):
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: Session):
         self.db_session = db_session
 
     async def create(self, item_packaging: ItemPackaging) -> ItemPackaging:
@@ -25,19 +25,19 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
             is_active=item_packaging.is_active,
         )
         self.db_session.add(db_item_packaging)
-        await self.db_session.commit()
-        await self.db_session.refresh(db_item_packaging)
+        self.db_session.commit()
+        self.db_session.refresh(db_item_packaging)
         return self._model_to_entity(db_item_packaging)
 
     async def get_by_id(self, item_packaging_id: UUID) -> Optional[ItemPackaging]:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.id == item_packaging_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()
         return self._model_to_entity(db_item_packaging) if db_item_packaging else None
 
     async def get_by_label(self, label: str) -> Optional[ItemPackaging]:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.label == label.upper())
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()
         return self._model_to_entity(db_item_packaging) if db_item_packaging else None
 
@@ -47,13 +47,13 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
             stmt = stmt.where(ItemPackagingModel.is_active == True)
         stmt = stmt.offset(skip).limit(limit).order_by(ItemPackagingModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packagings = result.scalars().all()
         return [self._model_to_entity(db_item_packaging) for db_item_packaging in db_item_packagings]
 
     async def update(self, item_packaging: ItemPackaging) -> ItemPackaging:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.id == item_packaging.id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()
         
         if not db_item_packaging:
@@ -66,20 +66,20 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
         db_item_packaging.updated_at = item_packaging.updated_at
         db_item_packaging.is_active = item_packaging.is_active
 
-        await self.db_session.commit()
-        await self.db_session.refresh(db_item_packaging)
+        self.db_session.commit()
+        self.db_session.refresh(db_item_packaging)
         return self._model_to_entity(db_item_packaging)
 
     async def delete(self, item_packaging_id: UUID) -> bool:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.id == item_packaging_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()
         
         if not db_item_packaging:
             return False
 
         db_item_packaging.is_active = False
-        await self.db_session.commit()
+        self.db_session.commit()
         return True
 
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[ItemPackaging]:
@@ -90,7 +90,7 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
             )
         ).offset(skip).limit(limit).order_by(ItemPackagingModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_item_packagings = result.scalars().all()
         return [self._model_to_entity(db_item_packaging) for db_item_packaging in db_item_packagings]
 
