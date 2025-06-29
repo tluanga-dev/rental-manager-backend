@@ -17,6 +17,7 @@ from ..schemas.inventory_item_master_schemas import (
     InventoryItemMasterSearchSchema,
     InventoryItemMasterQuantityUpdateSchema,
     InventoryItemMasterDimensionsUpdateSchema,
+    InventoryItemMasterStatsSchema,
 )
 
 router = APIRouter(prefix="/inventory-items", tags=["inventory-items"])
@@ -124,6 +125,15 @@ async def create_inventory_item(
         return inventory_item_to_response_schema(inventory_item)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/stats", response_model=InventoryItemMasterStatsSchema)
+async def get_inventory_item_stats(
+    service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
+):
+    """Get statistics for inventory item masters"""
+    stats = await service.get_stats()
+    return InventoryItemMasterStatsSchema(**stats)
 
 
 @router.get("/{item_id}", response_model=InventoryItemMasterResponseSchema)

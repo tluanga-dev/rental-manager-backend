@@ -182,3 +182,7 @@ class InventoryItemMasterService:
     async def get_line_items_count(self, inventory_item_id: UUID) -> int:
         """Get the count of line items associated with an inventory item master"""
         return await self.repository.get_line_items_count(inventory_item_id)
+
+    async def get_stats(self) -> dict:
+        """Get statistics for inventory item masters"""
+        return await self.repository.get_stats()

@@ -163,3 +163,12 @@ class InventoryItemMasterDimensionsUpdateSchema(BaseModel):
     length: Optional[Decimal] = Field(None, ge=0, description="Length in centimeters")
     width: Optional[Decimal] = Field(None, ge=0, description="Width in centimeters")
     height: Optional[Decimal] = Field(None, ge=0, description="Height in centimeters")
+
+
+class InventoryItemMasterStatsSchema(BaseModel):
+    total_masters: int = Field(description="Total number of item masters")
+    bulk_items: int = Field(description="Number of bulk tracking items")
+    individual_items: int = Field(description="Number of individual tracking items")
+    consumable_items: int = Field(description="Number of consumable items")
+    non_consumable_items: int = Field(description="Number of non-consumable items")
+    total_inventory_instances: int = Field(description="Total inventory instances across all locations")

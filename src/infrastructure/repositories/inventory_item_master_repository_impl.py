@@ -220,6 +220,51 @@ class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
         line_items_count = await self.get_line_items_count(item_id)
         return line_items_count == 0
 
+    async def get_stats(self) -> dict:
+        """Get statistics for inventory item masters"""
+        # Total masters
+        total_masters = self.session.query(InventoryItemMasterModel).filter(
+            InventoryItemMasterModel.is_active == True
+        ).count()
+        
+        # Bulk vs Individual items
+        bulk_items = self.session.query(InventoryItemMasterModel).filter(
+            InventoryItemMasterModel.tracking_type == TrackingType.BULK,
+            InventoryItemMasterModel.is_active == True
+        ).count()
+        
+        individual_items = self.session.query(InventoryItemMasterModel).filter(
+            InventoryItemMasterModel.tracking_type == TrackingType.INDIVIDUAL,
+            InventoryItemMasterModel.is_active == True
+        ).count()
+        
+        # Consumable vs Non-consumable items
+        consumable_items = self.session.query(InventoryItemMasterModel).filter(
+            InventoryItemMasterModel.is_consumable == True,
+            InventoryItemMasterModel.is_active == True
+        ).count()
+        
+        non_consumable_items = self.session.query(InventoryItemMasterModel).filter(
+            InventoryItemMasterModel.is_consumable == False,
+            InventoryItemMasterModel.is_active == True
+        ).count()
+        
+        # Total inventory instances (sum of all quantities)
+        total_inventory_instances = self.session.query(
+            func.coalesce(func.sum(InventoryItemMasterModel.quantity), 0)
+        ).filter(
+            InventoryItemMasterModel.is_active == True
+        ).scalar() or 0
+        
+        return {
+            "total_masters": total_masters,
+            "bulk_items": bulk_items,
+            "individual_items": individual_items,
+            "consumable_items": consumable_items,
+            "non_consumable_items": non_consumable_items,
+            "total_inventory_instances": total_inventory_instances
+        }
+
     def _model_to_entity(self, model: InventoryItemMasterModel) -> InventoryItemMaster:
         return InventoryItemMaster(
             inventory_id=model.id,
