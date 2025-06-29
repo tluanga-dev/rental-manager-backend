@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
 from ...domain.entities.warehouse import Warehouse
@@ -9,7 +9,7 @@ from ..database.models import WarehouseModel
 
 
 class WarehouseRepositoryImpl(WarehouseRepository):
-    def __init__(self, db_session: AsyncSession):
+    def __init__(self, db_session: Session):
         self.db_session = db_session
 
     async def create(self, warehouse: Warehouse) -> Warehouse:
@@ -24,19 +24,19 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             is_active=warehouse.is_active,
         )
         self.db_session.add(db_warehouse)
-        await self.db_session.commit()
-        await self.db_session.refresh(db_warehouse)
+        self.db_session.commit()
+        self.db_session.refresh(db_warehouse)
         return self._model_to_entity(db_warehouse)
 
     async def get_by_id(self, warehouse_id: UUID) -> Optional[Warehouse]:
         stmt = select(WarehouseModel).where(WarehouseModel.id == warehouse_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()
         return self._model_to_entity(db_warehouse) if db_warehouse else None
 
     async def get_by_label(self, label: str) -> Optional[Warehouse]:
         stmt = select(WarehouseModel).where(WarehouseModel.label == label.upper())
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()
         return self._model_to_entity(db_warehouse) if db_warehouse else None
 
@@ -46,13 +46,13 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             stmt = stmt.where(WarehouseModel.is_active == True)
         stmt = stmt.offset(skip).limit(limit).order_by(WarehouseModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouses = result.scalars().all()
         return [self._model_to_entity(db_warehouse) for db_warehouse in db_warehouses]
 
     async def update(self, warehouse: Warehouse) -> Warehouse:
         stmt = select(WarehouseModel).where(WarehouseModel.id == warehouse.id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()
         
         if not db_warehouse:
@@ -64,20 +64,20 @@ class WarehouseRepositoryImpl(WarehouseRepository):
         db_warehouse.updated_at = warehouse.updated_at
         db_warehouse.is_active = warehouse.is_active
 
-        await self.db_session.commit()
-        await self.db_session.refresh(db_warehouse)
+        self.db_session.commit()
+        self.db_session.refresh(db_warehouse)
         return self._model_to_entity(db_warehouse)
 
     async def delete(self, warehouse_id: UUID) -> bool:
         stmt = select(WarehouseModel).where(WarehouseModel.id == warehouse_id)
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()
         
         if not db_warehouse:
             return False
 
         db_warehouse.is_active = False
-        await self.db_session.commit()
+        self.db_session.commit()
         return True
 
     async def search_by_name(self, name: str, skip: int = 0, limit: int = 100) -> List[Warehouse]:
@@ -88,7 +88,7 @@ class WarehouseRepositoryImpl(WarehouseRepository):
             )
         ).offset(skip).limit(limit).order_by(WarehouseModel.name)
         
-        result = await self.db_session.execute(stmt)
+        result = self.db_session.execute(stmt)
         db_warehouses = result.scalars().all()
         return [self._model_to_entity(db_warehouse) for db_warehouse in db_warehouses]
 
