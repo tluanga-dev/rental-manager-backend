@@ -53,16 +53,54 @@ async def get_warehouse(
     return WarehouseResponse.from_orm(warehouse)
 
 
-@router.get("/", response_model=List[WarehouseResponse])
+@router.get("/")
 async def list_warehouses(
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    active_only: bool = Query(True, description="Whether to return only active records"),
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=1000, description="Number of records per page"),
+    is_active: bool = Query(True, description="Whether to return only active records"),
+    search: str = Query(None, description="Search term for name or label"),
+    ordering: str = Query("-created_at", description="Ordering field"),
     use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
 ):
     """List all warehouses with pagination"""
-    warehouses = await use_cases.list_warehouses(skip, limit, active_only)
-    return [WarehouseResponse.from_orm(warehouse) for warehouse in warehouses]
+    skip = (page - 1) * page_size
+    
+    # If search is provided, use search functionality
+    if search:
+        warehouses = await use_cases.search_warehouses(search, skip, page_size)
+    else:
+        warehouses = await use_cases.list_warehouses(skip, page_size, active_only=is_active)
+    
+    # For now, return a simple count (we'll add a proper count method later)
+    total_count = len(warehouses)
+    
+    # Sort results based on ordering parameter
+    if ordering == "name":
+        warehouses.sort(key=lambda x: x.name)
+    elif ordering == "-name":
+        warehouses.sort(key=lambda x: x.name, reverse=True)
+    elif ordering == "label":
+        warehouses.sort(key=lambda x: x.label)
+    elif ordering == "-label":
+        warehouses.sort(key=lambda x: x.label, reverse=True)
+    elif ordering == "created_at":
+        warehouses.sort(key=lambda x: x.created_at)
+    elif ordering == "-created_at":
+        warehouses.sort(key=lambda x: x.created_at, reverse=True)
+    
+    # Calculate pagination info
+    has_next = len(warehouses) == page_size  # Simple heuristic
+    has_previous = skip > 0
+    
+    next_url = f"/api/v1/warehouses/?page={page + 1}&page_size={page_size}&is_active={is_active}" if has_next else None
+    previous_url = f"/api/v1/warehouses/?page={page - 1}&page_size={page_size}&is_active={is_active}" if has_previous else None
+    
+    return {
+        "count": total_count,
+        "next": next_url,
+        "previous": previous_url,
+        "results": [WarehouseResponse.from_orm(w).dict() for w in warehouses]
+    }
 
 
 @router.get("/search/", response_model=List[WarehouseResponse])
@@ -130,3 +168,29 @@ async def activate_warehouse(
         await use_cases.activate_warehouse(warehouse_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/stats/overview")
+async def get_warehouse_stats(
+    use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
+):
+    """Get warehouse statistics for overview"""
+    try:
+        # Get all active warehouses to calculate stats
+        all_warehouses = await use_cases.list_warehouses(skip=0, limit=10000, active_only=True)
+        
+        total_warehouses = len(all_warehouses)
+        warehouses_with_remarks = len([w for w in all_warehouses if w.remarks and w.remarks.strip()])
+        
+        # Calculate recent warehouses (30 days) - using timezone-aware datetime
+        from datetime import datetime, timedelta, timezone
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_warehouses_30_days = len([w for w in all_warehouses if w.created_at >= thirty_days_ago])
+        
+        return {
+            "total_warehouses": total_warehouses,
+            "warehouses_with_remarks": warehouses_with_remarks,
+            "recent_warehouses_30_days": recent_warehouses_30_days,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error calculating stats: {str(e)}")
