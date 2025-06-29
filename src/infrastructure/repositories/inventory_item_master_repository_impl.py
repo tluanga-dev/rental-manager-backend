@@ -2,12 +2,12 @@ from typing import List, Optional
 from uuid import UUID
 from decimal import Decimal
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func, or_
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, or_, select
 
 from ...domain.entities.inventory_item_master import InventoryItemMaster
 from ...domain.repositories.inventory_item_master_repository import InventoryItemMasterRepository
-from ..database.models import InventoryItemMasterModel, TrackingType
+from ..database.models import InventoryItemMasterModel, TrackingType, LineItemModel
 
 
 class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
@@ -72,9 +72,15 @@ class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
         return None
 
     async def find_all(self, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
-        inventory_models = self.session.query(InventoryItemMasterModel).filter(
-            InventoryItemMasterModel.is_active == True
-        ).offset(skip).limit(limit).all()
+        inventory_models = self.session.query(InventoryItemMasterModel)\
+            .options(
+                joinedload(InventoryItemMasterModel.subcategory)
+                .joinedload('item_category'),
+                joinedload(InventoryItemMasterModel.unit_of_measurement),
+                joinedload(InventoryItemMasterModel.packaging)
+            )\
+            .filter(InventoryItemMasterModel.is_active == True)\
+            .offset(skip).limit(limit).all()
         return [self._model_to_entity(model) for model in inventory_models]
 
     async def find_by_subcategory(self, subcategory_id: UUID, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
@@ -162,7 +168,8 @@ class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
     async def exists_by_sku(self, sku: str, exclude_id: Optional[UUID] = None) -> bool:
         normalized_sku = sku.strip().upper()
         query = self.session.query(InventoryItemMasterModel).filter(
-            InventoryItemMasterModel.sku == normalized_sku
+            InventoryItemMasterModel.sku == normalized_sku,
+            InventoryItemMasterModel.is_active == True
         )
         if exclude_id:
             query = query.filter(InventoryItemMasterModel.id != exclude_id)
@@ -170,7 +177,8 @@ class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
 
     async def exists_by_name(self, name: str, exclude_id: Optional[UUID] = None) -> bool:
         query = self.session.query(InventoryItemMasterModel).filter(
-            InventoryItemMasterModel.name == name
+            InventoryItemMasterModel.name == name,
+            InventoryItemMasterModel.is_active == True
         )
         if exclude_id:
             query = query.filter(InventoryItemMasterModel.id != exclude_id)
@@ -199,9 +207,22 @@ class SQLAlchemyInventoryItemMasterRepository(InventoryItemMasterRepository):
             return True
         return False
 
+    async def get_line_items_count(self, item_id: UUID) -> int:
+        """Get the count of line items associated with an inventory item master"""
+        count = self.session.query(LineItemModel).filter(
+            LineItemModel.inventory_item_master_id == item_id,
+            LineItemModel.is_active == True
+        ).count()
+        return count
+
+    async def can_delete(self, item_id: UUID) -> bool:
+        """Check if an inventory item master can be deleted (no associated line items)"""
+        line_items_count = await self.get_line_items_count(item_id)
+        return line_items_count == 0
+
     def _model_to_entity(self, model: InventoryItemMasterModel) -> InventoryItemMaster:
         return InventoryItemMaster(
-            id=model.id,
+            inventory_id=model.id,
             name=model.name,
             sku=model.sku,
             description=model.description,

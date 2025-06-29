@@ -282,6 +282,11 @@ def mock_inventory_repository():
     repo.exists_by_sku = AsyncMock()
     repo.exists_by_name = AsyncMock()
     repo.search = AsyncMock()
+    repo.find_by_subcategory = AsyncMock()
+    repo.find_by_tracking_type = AsyncMock()
+    repo.find_consumables = AsyncMock()
+    repo.update_quantity = AsyncMock()
+    repo.count = AsyncMock()
     return repo
 
 
@@ -334,3 +339,289 @@ def mock_item_category_repository():
     repo.search = AsyncMock()
     repo.search_categories = AsyncMock()
     return repo
+
+
+# Additional fixtures for comprehensive inventory item master testing
+@pytest.fixture
+def sample_inventory_item_bulk_data():
+    """Sample bulk inventory item data for testing"""
+    return {
+        "name": "Steel Screws M6x20",
+        "sku": "SCREW-M6-20",
+        "description": "Stainless steel screws M6x20mm",
+        "tracking_type": "BULK",
+        "brand": "FastenerPro",
+        "quantity": 500,
+        "is_consumable": False,
+        "renting_period": 1
+    }
+
+
+@pytest.fixture
+def sample_inventory_item_consumable_data():
+    """Sample consumable inventory item data for testing"""
+    return {
+        "name": "A4 Paper Sheets",
+        "sku": "PAPER-A4-001",
+        "description": "High quality A4 paper for printing",
+        "tracking_type": "BULK",
+        "brand": "OfficeMax",
+        "quantity": 1000,
+        "is_consumable": True,
+        "renting_period": 1
+    }
+
+
+@pytest.fixture
+def sample_inventory_item_individual_data():
+    """Sample individual tracking inventory item data for testing"""
+    return {
+        "name": "Dell Monitor 27-inch",
+        "sku": "DELL-MON-27",
+        "description": "Dell 27-inch 4K monitor",
+        "tracking_type": "INDIVIDUAL",
+        "brand": "Dell",
+        "manufacturer_part_number": "U2720Q",
+        "weight": Decimal("5.8"),
+        "length": Decimal("61.1"),
+        "width": Decimal("52.1"),
+        "height": Decimal("18.6"),
+        "quantity": 10,
+        "renting_period": 7
+    }
+
+
+@pytest.fixture
+def sample_inventory_item_bulk(sample_inventory_item_bulk_data, sample_subcategory):
+    """Sample bulk inventory item entity for testing"""
+    return InventoryItemMaster(
+        inventory_id=uuid4(),
+        name=sample_inventory_item_bulk_data["name"],
+        sku=sample_inventory_item_bulk_data["sku"],
+        description=sample_inventory_item_bulk_data["description"],
+        item_sub_category_id=sample_subcategory.id,
+        unit_of_measurement_id=uuid4(),
+        tracking_type=sample_inventory_item_bulk_data["tracking_type"],
+        brand=sample_inventory_item_bulk_data["brand"],
+        quantity=sample_inventory_item_bulk_data["quantity"],
+        is_consumable=sample_inventory_item_bulk_data["is_consumable"],
+        renting_period=sample_inventory_item_bulk_data["renting_period"]
+    )
+
+
+@pytest.fixture
+def sample_inventory_item_consumable(sample_inventory_item_consumable_data, sample_subcategory):
+    """Sample consumable inventory item entity for testing"""
+    return InventoryItemMaster(
+        inventory_id=uuid4(),
+        name=sample_inventory_item_consumable_data["name"],
+        sku=sample_inventory_item_consumable_data["sku"],
+        description=sample_inventory_item_consumable_data["description"],
+        item_sub_category_id=sample_subcategory.id,
+        unit_of_measurement_id=uuid4(),
+        tracking_type=sample_inventory_item_consumable_data["tracking_type"],
+        brand=sample_inventory_item_consumable_data["brand"],
+        quantity=sample_inventory_item_consumable_data["quantity"],
+        is_consumable=sample_inventory_item_consumable_data["is_consumable"],
+        renting_period=sample_inventory_item_consumable_data["renting_period"]
+    )
+
+
+@pytest.fixture
+def sample_inventory_item_individual(sample_inventory_item_individual_data, sample_subcategory):
+    """Sample individual tracking inventory item entity for testing"""
+    return InventoryItemMaster(
+        inventory_id=uuid4(),
+        name=sample_inventory_item_individual_data["name"],
+        sku=sample_inventory_item_individual_data["sku"],
+        description=sample_inventory_item_individual_data["description"],
+        item_sub_category_id=sample_subcategory.id,
+        unit_of_measurement_id=uuid4(),
+        tracking_type=sample_inventory_item_individual_data["tracking_type"],
+        brand=sample_inventory_item_individual_data["brand"],
+        manufacturer_part_number=sample_inventory_item_individual_data["manufacturer_part_number"],
+        weight=sample_inventory_item_individual_data["weight"],
+        length=sample_inventory_item_individual_data["length"],
+        width=sample_inventory_item_individual_data["width"],
+        height=sample_inventory_item_individual_data["height"],
+        quantity=sample_inventory_item_individual_data["quantity"],
+        renting_period=sample_inventory_item_individual_data["renting_period"]
+    )
+
+
+@pytest.fixture
+def multiple_inventory_items(sample_inventory_item, sample_inventory_item_bulk, 
+                           sample_inventory_item_consumable, sample_inventory_item_individual):
+    """Multiple inventory items for batch testing"""
+    return [
+        sample_inventory_item,
+        sample_inventory_item_bulk,
+        sample_inventory_item_consumable,
+        sample_inventory_item_individual
+    ]
+
+
+@pytest.fixture
+def inventory_item_update_data():
+    """Sample data for updating inventory items"""
+    return {
+        "name": "Updated Item Name",
+        "description": "Updated description",
+        "brand": "Updated Brand",
+        "weight": Decimal("3.5"),
+        "length": Decimal("25.0"),
+        "width": Decimal("15.0"),
+        "height": Decimal("5.0"),
+        "quantity": 25,
+        "renting_period": 14
+    }
+
+
+@pytest.fixture
+def inventory_item_minimal_update_data():
+    """Minimal data for updating inventory items"""
+    return {
+        "name": "Minimally Updated Item",
+        "is_active": False
+    }
+
+
+@pytest.fixture
+def inventory_item_dimensions_data():
+    """Sample dimensions data for testing"""
+    return {
+        "weight": Decimal("2.5"),
+        "length": Decimal("30.0"),
+        "width": Decimal("20.0"),
+        "height": Decimal("3.0")
+    }
+
+
+@pytest.fixture
+def inventory_item_search_queries():
+    """Sample search queries for testing"""
+    return [
+        "MacBook",
+        "laptop",
+        "Apple",
+        "MBP",
+        "steel",
+        "paper",
+        "monitor"
+    ]
+
+
+@pytest.fixture
+def inventory_tracking_types():
+    """Valid tracking types for testing"""
+    return ["BULK", "INDIVIDUAL"]
+
+
+@pytest.fixture
+def invalid_tracking_types():
+    """Invalid tracking types for testing"""
+    return ["INVALID", "bulk", "individual", "SERIAL", "BATCH"]
+
+
+@pytest.fixture
+def inventory_item_validation_test_cases():
+    """Test cases for inventory item validation"""
+    return [
+        {
+            "description": "Empty name",
+            "data": {"name": "", "sku": "TEST-001"},
+            "expected_error": "Item name is required"
+        },
+        {
+            "description": "Empty SKU",
+            "data": {"name": "Test Item", "sku": ""},
+            "expected_error": "SKU is required"
+        },
+        {
+            "description": "Invalid tracking type",
+            "data": {"name": "Test Item", "sku": "TEST-001", "tracking_type": "INVALID"},
+            "expected_error": "Tracking type must be either BULK or INDIVIDUAL"
+        },
+        {
+            "description": "Negative renting period",
+            "data": {"name": "Test Item", "sku": "TEST-001", "renting_period": 0},
+            "expected_error": "Renting period must be at least 1 day"
+        },
+        {
+            "description": "Negative quantity",
+            "data": {"name": "Test Item", "sku": "TEST-001", "quantity": -1},
+            "expected_error": "Quantity cannot be negative"
+        },
+        {
+            "description": "Negative weight",
+            "data": {"name": "Test Item", "sku": "TEST-001", "weight": Decimal("-1.0")},
+            "expected_error": "Weight cannot be negative"
+        }
+    ]
+
+
+@pytest.fixture
+def inventory_item_test_scenarios():
+    """Test scenarios for comprehensive testing"""
+    return {
+        "create_scenarios": [
+            {
+                "name": "Basic laptop",
+                "sku": "LAPTOP-001",
+                "tracking_type": "INDIVIDUAL",
+                "expected_success": True
+            },
+            {
+                "name": "Bulk screws",
+                "sku": "SCREW-001", 
+                "tracking_type": "BULK",
+                "quantity": 100,
+                "expected_success": True
+            },
+            {
+                "name": "Consumable paper",
+                "sku": "PAPER-001",
+                "tracking_type": "BULK",
+                "is_consumable": True,
+                "expected_success": True
+            }
+        ],
+        "update_scenarios": [
+            {
+                "field": "name",
+                "new_value": "Updated Name",
+                "expected_success": True
+            },
+            {
+                "field": "quantity",
+                "new_value": 50,
+                "expected_success": True
+            },
+            {
+                "field": "tracking_type", 
+                "new_value": "INVALID",
+                "expected_success": False
+            }
+        ]
+    }
+
+
+# Mock service fixtures
+@pytest.fixture
+def mock_inventory_service():
+    """Mock inventory item master service for testing"""
+    service = Mock()
+    service.create_inventory_item_master = AsyncMock()
+    service.get_inventory_item_master = AsyncMock()
+    service.get_inventory_item_master_by_sku = AsyncMock()
+    service.update_inventory_item_master = AsyncMock()
+    service.delete_inventory_item_master = AsyncMock()
+    service.list_inventory_item_masters = AsyncMock()
+    service.list_by_subcategory = AsyncMock()
+    service.list_by_tracking_type = AsyncMock()
+    service.list_consumables = AsyncMock()
+    service.search_inventory_item_masters = AsyncMock()
+    service.update_quantity = AsyncMock()
+    service.update_dimensions = AsyncMock()
+    service.count_inventory_item_masters = AsyncMock()
+    return service

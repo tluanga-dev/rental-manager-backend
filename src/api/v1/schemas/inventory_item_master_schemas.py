@@ -110,6 +110,16 @@ class InventoryItemMasterResponseSchema(TimeStampedSchema):
     height: Optional[Decimal] = None
     renting_period: int
     quantity: int
+    
+    # Related entity names for frontend display
+    item_category_name: Optional[str] = None
+    item_sub_category_name: Optional[str] = None
+    unit_of_measurement_name: Optional[str] = None
+    packaging_name: Optional[str] = None
+    
+    # Delete functionality fields
+    line_items_count: int = Field(default=0, description="Number of line items associated with this master item")
+    can_delete: bool = Field(default=True, description="Whether this item can be deleted (no line items)")
 
     class Config:
         json_encoders = {

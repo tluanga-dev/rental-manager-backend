@@ -174,3 +174,11 @@ class InventoryItemMasterService:
 
     async def count_by_subcategory(self, subcategory_id: UUID) -> int:
         return await self.repository.count_by_subcategory(subcategory_id)
+
+    async def can_delete_inventory_item_master(self, inventory_item_id: UUID) -> bool:
+        """Check if an inventory item master can be deleted (no associated line items)"""
+        return await self.repository.can_delete(inventory_item_id)
+
+    async def get_line_items_count(self, inventory_item_id: UUID) -> int:
+        """Get the count of line items associated with an inventory item master"""
+        return await self.repository.get_line_items_count(inventory_item_id)
