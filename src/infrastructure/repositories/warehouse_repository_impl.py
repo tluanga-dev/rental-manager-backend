@@ -8,7 +8,7 @@ from ...domain.repositories.warehouse_repository import WarehouseRepository
 from ..database.models import WarehouseModel
 
 
-class WarehouseRepositoryImpl(WarehouseRepository):
+class SQLAlchemyWarehouseRepository(WarehouseRepository):
     def __init__(self, db_session: Session):
         self.db_session = db_session
 

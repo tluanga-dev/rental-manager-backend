@@ -20,19 +20,17 @@ class SalesTransactionItemCreateSchema(BaseModel):
     inventory_item_master_id: UUID = Field(..., description="Inventory item master ID")
     warehouse_id: UUID = Field(..., description="Warehouse ID")
     quantity: int = Field(..., gt=0, description="Quantity to sell")
-    unit_price: Decimal = Field(..., ge=0, decimal_places=2, description="Unit selling price")
+    unit_price: Decimal = Field(..., ge=0, description="Unit selling price")
     discount_percentage: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
         le=100,
-        decimal_places=2,
         description="Discount percentage"
     )
     tax_rate: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
         le=100,
-        decimal_places=2,
         description="Tax rate percentage"
     )
     serial_numbers: Optional[List[str]] = Field(
@@ -89,13 +87,12 @@ class SalesTransactionCreateSchema(BaseModel):
     delivery_date: Optional[datetime] = Field(None, description="Expected delivery date")
     payment_terms: str = Field(
         default="IMMEDIATE",
-        regex="^(IMMEDIATE|NET_15|NET_30|NET_45|NET_60|NET_90|COD|PREPAID)$",
+        pattern="^(IMMEDIATE|NET_15|NET_30|NET_45|NET_60|NET_90|COD|PREPAID)$",
         description="Payment terms"
     )
     shipping_amount: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
-        decimal_places=2,
         description="Shipping charges"
     )
     shipping_address: Optional[str] = Field(None, max_length=500, description="Shipping address")
@@ -114,7 +111,7 @@ class SalesTransactionUpdateSchema(BaseModel):
     """Schema for updating a sales transaction."""
     
     delivery_date: Optional[datetime] = Field(None, description="Expected delivery date")
-    shipping_amount: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    shipping_amount: Optional[Decimal] = Field(None, ge=0)
     shipping_address: Optional[str] = Field(None, max_length=500)
     billing_address: Optional[str] = Field(None, max_length=500)
     purchase_order_number: Optional[str] = Field(None, max_length=50)
@@ -168,7 +165,6 @@ class UpdatePaymentSchema(BaseModel):
     amount_paid: Decimal = Field(
         ...,
         ge=0,
-        decimal_places=2,
         description="Total amount paid (not incremental)"
     )
     payment_notes: Optional[str] = Field(
@@ -182,7 +178,7 @@ class BulkPriceUpdateItemSchema(BaseModel):
     """Schema for bulk price update item."""
     
     id: UUID = Field(..., description="Sales transaction item ID")
-    unit_price: Decimal = Field(..., ge=0, decimal_places=2, description="New unit price")
+    unit_price: Decimal = Field(..., ge=0, description="New unit price")
 
 
 class BulkPriceUpdateSchema(BaseModel):
@@ -201,12 +197,12 @@ class SalesTransactionListQuerySchema(BaseModel):
     customer_id: Optional[UUID] = Field(None, description="Filter by customer")
     status: Optional[str] = Field(
         None,
-        regex="^(DRAFT|CONFIRMED|PROCESSING|SHIPPED|DELIVERED|CANCELLED)$",
+        pattern="^(DRAFT|CONFIRMED|PROCESSING|SHIPPED|DELIVERED|CANCELLED)$",
         description="Filter by status"
     )
     payment_status: Optional[str] = Field(
         None,
-        regex="^(PENDING|PARTIAL|PAID|OVERDUE|REFUNDED)$",
+        pattern="^(PENDING|PARTIAL|PAID|OVERDUE|REFUNDED)$",
         description="Filter by payment status"
     )
     start_date: Optional[datetime] = Field(None, description="Filter by start date")

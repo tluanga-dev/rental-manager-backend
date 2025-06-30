@@ -947,6 +947,7 @@ def mock_sales_transaction_repository():
     repo.get_sales_summary = AsyncMock()
     repo.get_top_customers = AsyncMock()
     repo.get_sales_by_period = AsyncMock()
+    repo.get_customer_outstanding_balance = AsyncMock(return_value=Decimal("0.00"))
     return repo
 
 
@@ -1017,6 +1018,9 @@ def mock_inventory_stock_movement_service():
     service.confirm_sale = AsyncMock()
     service.process_return = AsyncMock()
     service.check_availability = AsyncMock()
+    service.get_available_stock = AsyncMock(return_value=1000)  # Always return plenty of stock
+    service.get_available_quantity = AsyncMock(return_value=1000)
+    service.get_reserved_quantity = AsyncMock(return_value=0)
     return service
 
 

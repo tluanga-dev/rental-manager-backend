@@ -200,7 +200,7 @@ class SQLAlchemyPurchaseOrderRepository(PurchaseOrderRepository):
         """Generate the next purchase order number."""
         # This is a simple implementation. In production, you might want to use
         # the IDManager entity or a more sophisticated sequence generator
-        from ...domain.entities.id_manager import IDManager
+        from ...domain.entities.id_manager import IdManager
         
         # Get the last order number
         last_po = self.session.query(PurchaseOrderModel).order_by(

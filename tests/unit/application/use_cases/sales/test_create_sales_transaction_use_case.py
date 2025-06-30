@@ -21,11 +21,16 @@ class TestCreateSalesTransactionUseCase:
                  mock_customer_repository, mock_inventory_repository, mock_id_manager_repository,
                  mock_inventory_stock_movement_service):
         """Create use case instance with mocked dependencies"""
+        # Need warehouse repository too
+        mock_warehouse_repository = Mock()
+        mock_warehouse_repository.find_by_id = AsyncMock()
+        
         return CreateSalesTransactionUseCase(
-            sales_transaction_repository=mock_sales_transaction_repository,
-            sales_transaction_item_repository=mock_sales_transaction_item_repository,
+            sales_repository=mock_sales_transaction_repository,
+            sales_item_repository=mock_sales_transaction_item_repository,
             customer_repository=mock_customer_repository,
             inventory_repository=mock_inventory_repository,
+            warehouse_repository=mock_warehouse_repository,
             id_manager_repository=mock_id_manager_repository,
             stock_movement_service=mock_inventory_stock_movement_service
         )
@@ -37,6 +42,7 @@ class TestCreateSalesTransactionUseCase:
         # Setup mock returns
         use_case.customer_repository.find_by_id.return_value = sample_customer
         use_case.inventory_repository.find_by_id.return_value = sample_inventory_item
+        use_case.warehouse_repository.find_by_id.return_value = sample_warehouse
         use_case.id_manager_repository.get_next_id.return_value = "SO-2024-001"
         use_case.stock_movement_service.check_availability.return_value = True
         
@@ -45,11 +51,11 @@ class TestCreateSalesTransactionUseCase:
         async def save_transaction(transaction):
             nonlocal saved_transaction
             saved_transaction = transaction
-            transaction.id = uuid4()
+            # ID is already set in entity constructor, just return it
             return transaction
         
-        use_case.sales_transaction_repository.create.side_effect = save_transaction
-        use_case.sales_transaction_item_repository.create_many.return_value = []
+        use_case.sales_repository.create.side_effect = save_transaction
+        use_case.sales_item_repository.create_many.return_value = []
         
         # Test data
         items = [
@@ -57,9 +63,9 @@ class TestCreateSalesTransactionUseCase:
                 "inventory_item_master_id": sample_inventory_item.id,
                 "warehouse_id": sample_warehouse.id,
                 "quantity": 2,
-                "unit_price": 100.00,
-                "discount_percentage": 10.0,
-                "tax_rate": 8.0,
+                "unit_price": Decimal("100.00"),
+                "discount_percentage": Decimal("10.0"),
+                "tax_rate": Decimal("8.0"),
                 "serial_numbers": ["SN001", "SN002"]
             }
         ]
@@ -68,7 +74,7 @@ class TestCreateSalesTransactionUseCase:
         transaction, transaction_items = await use_case.execute(
             customer_id=sample_customer.id,
             items=items,
-            shipping_amount=25.00,
+            shipping_amount=Decimal("25.00"),
             payment_terms="NET_30",
             shipping_address="123 Test St",
             billing_address="456 Bill Ave",
@@ -87,7 +93,7 @@ class TestCreateSalesTransactionUseCase:
         
         # Verify repositories were called
         use_case.customer_repository.find_by_id.assert_called_once_with(sample_customer.id)
-        use_case.id_manager_repository.get_next_id.assert_called_once_with("sales_transaction")
+        use_case.id_manager_repository.get_next_id.assert_called_once_with(CreateSalesTransactionUseCase.SALES_TRANSACTION_PREFIX)
     
     @pytest.mark.asyncio
     async def test_create_sales_transaction_customer_not_found(self, use_case):

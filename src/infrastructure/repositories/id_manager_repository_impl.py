@@ -10,7 +10,7 @@ from ...domain.repositories.id_manager_repository import IdManagerRepository
 from ..database.models import IdManagerModel
 
 
-class IdManagerRepositoryImpl(IdManagerRepository):
+class SQLAlchemyIdManagerRepository(IdManagerRepository):
     def __init__(self, db_session: AsyncSession):
         self.db_session = db_session
 

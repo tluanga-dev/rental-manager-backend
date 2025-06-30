@@ -79,7 +79,6 @@ class SalesReturnCreateSchema(BaseModel):
     restocking_fee: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
-        decimal_places=2,
         description="Restocking fee to charge"
     )
     
@@ -97,7 +96,7 @@ class SalesReturnUpdateSchema(BaseModel):
     """Schema for updating a sales return."""
     
     reason: Optional[str] = Field(None, min_length=10, max_length=500)
-    restocking_fee: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    restocking_fee: Optional[Decimal] = Field(None, ge=0)
 
 
 class SalesReturnResponseSchema(TimeStampedSchema):

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ....core.config.database import get_db_session
-from ....infrastructure.repositories.warehouse_repository_impl import WarehouseRepositoryImpl
+from ....infrastructure.repositories.warehouse_repository_impl import SQLAlchemyWarehouseRepository
 from ....application.services.warehouse_service import WarehouseService
 from ....application.use_cases.warehouse_use_cases import WarehouseUseCases
 from ..schemas.warehouse_schemas import (
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/warehouses", tags=["warehouses"])
 
 
 def get_warehouse_use_cases(db: Session = Depends(get_db_session)) -> WarehouseUseCases:
-    repository = WarehouseRepositoryImpl(db)
+    repository = SQLAlchemyWarehouseRepository(db)
     service = WarehouseService(repository)
     return WarehouseUseCases(service)
 

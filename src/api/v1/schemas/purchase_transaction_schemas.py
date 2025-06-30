@@ -18,7 +18,7 @@ class PurchaseTransactionItemCreateSchema(BaseModel):
     
     item_master_id: UUID = Field(..., description="Inventory item master ID")
     quantity: int = Field(..., gt=0, description="Quantity purchased")
-    unit_price: Decimal = Field(..., ge=0, decimal_places=2, description="Unit purchase price")
+    unit_price: Decimal = Field(..., ge=0, description="Unit purchase price")
     warehouse_id: Optional[UUID] = Field(None, description="Warehouse ID")
     serial_number: Optional[List[str]] = Field(
         default_factory=list,
@@ -27,13 +27,11 @@ class PurchaseTransactionItemCreateSchema(BaseModel):
     discount: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
-        decimal_places=2,
         description="Discount amount"
     )
     tax_amount: Optional[Decimal] = Field(
         default=Decimal("0"),
         ge=0,
-        decimal_places=2,
         description="Tax amount"
     )
     remarks: Optional[str] = Field(None, max_length=1000, description="Item remarks")
@@ -71,9 +69,9 @@ class PurchaseTransactionItemCreateSchema(BaseModel):
 class PurchaseTransactionItemUpdateSchema(BaseModel):
     """Schema for updating a purchase transaction item."""
     
-    unit_price: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Unit purchase price")
-    discount: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Discount amount")
-    tax_amount: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Tax amount")
+    unit_price: Optional[Decimal] = Field(None, ge=0, description="Unit purchase price")
+    discount: Optional[Decimal] = Field(None, ge=0, description="Discount amount")
+    tax_amount: Optional[Decimal] = Field(None, ge=0, description="Tax amount")
     remarks: Optional[str] = Field(None, max_length=1000, description="Item remarks")
     warranty_period_type: Optional[str] = Field(
         None,
