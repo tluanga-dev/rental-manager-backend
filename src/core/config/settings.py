@@ -16,6 +16,13 @@ class Settings(BaseSettings):
     cors_allow_credentials: bool = True
     cors_allow_methods: list[str] = ["*"]
     cors_allow_headers: list[str] = ["*"]
+    
+    # Logging configuration
+    log_level: str = "INFO"
+    log_format: str = "json"
+    log_file: Optional[str] = None
+    enable_correlation_id: bool = True
+    enable_performance_logging: bool = True
 
     class Config:
         env_file = ".env"

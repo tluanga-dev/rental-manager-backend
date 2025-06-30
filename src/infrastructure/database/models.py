@@ -1,6 +1,7 @@
-from sqlalchemy import Column, String, Text, Index, ForeignKey, UniqueConstraint, Integer, Boolean, Enum, DECIMAL, CheckConstraint, Date
+from sqlalchemy import Column, String, Text, Index, ForeignKey, UniqueConstraint, Integer, Boolean, Enum, DECIMAL, CheckConstraint, Date, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 import enum
 
 from .base_model import TimeStampedModel
@@ -335,4 +336,240 @@ class PurchaseOrderLineItemModel(TimeStampedModel):
         Index('ix_purchase_order_line_items_serial', 'serial_number'),
         Index('ix_purchase_order_line_items_inventory', 'inventory_item_master_id'),
         Index('ix_purchase_order_line_items_warehouse', 'warehouse_id'),
+    )
+
+
+# Sales Enums
+class SalesStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    CONFIRMED = "CONFIRMED"
+    PROCESSING = "PROCESSING"
+    SHIPPED = "SHIPPED"
+    DELIVERED = "DELIVERED"
+    CANCELLED = "CANCELLED"
+
+
+class PaymentStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    PARTIAL = "PARTIAL"
+    PAID = "PAID"
+    OVERDUE = "OVERDUE"
+    REFUNDED = "REFUNDED"
+
+
+class PaymentTerms(str, enum.Enum):
+    IMMEDIATE = "IMMEDIATE"
+    NET_15 = "NET_15"
+    NET_30 = "NET_30"
+    NET_45 = "NET_45"
+    NET_60 = "NET_60"
+    NET_90 = "NET_90"
+    COD = "COD"
+    PREPAID = "PREPAID"
+
+
+class SalesTransactionModel(TimeStampedModel):
+    __tablename__ = "sales_transactions"
+
+    transaction_id = Column(String(20), nullable=False, unique=True, index=True)
+    invoice_number = Column(String(50), nullable=True, unique=True, index=True)
+    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    order_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    delivery_date = Column(DateTime(timezone=True), nullable=True)
+    status = Column(Enum(SalesStatus), default=SalesStatus.DRAFT, nullable=False)
+    payment_status = Column(Enum(PaymentStatus), default=PaymentStatus.PENDING, nullable=False)
+    payment_terms = Column(Enum(PaymentTerms), default=PaymentTerms.IMMEDIATE, nullable=False)
+    payment_due_date = Column(Date, nullable=True)
+    subtotal = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    discount_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    tax_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    shipping_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    grand_total = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    amount_paid = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    shipping_address = Column(Text, nullable=True)
+    billing_address = Column(Text, nullable=True)
+    purchase_order_number = Column(String(50), nullable=True)
+    # TODO: Add foreign key to user table when authentication is implemented
+    sales_person_id = Column(UUID(as_uuid=True), nullable=True)
+    notes = Column(Text, nullable=True)
+    customer_notes = Column(Text, nullable=True)
+
+    # Relationships
+    customer = relationship("CustomerModel", backref="sales_transactions")
+    items = relationship("SalesTransactionItemModel", back_populates="transaction", cascade="all, delete-orphan")
+    returns = relationship("SalesReturnModel", back_populates="sales_transaction", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint('subtotal >= 0', name='check_positive_subtotal'),
+        CheckConstraint('discount_amount >= 0', name='check_positive_discount'),
+        CheckConstraint('tax_amount >= 0', name='check_positive_tax'),
+        CheckConstraint('shipping_amount >= 0', name='check_positive_shipping'),
+        CheckConstraint('grand_total >= 0', name='check_positive_grand_total'),
+        CheckConstraint('amount_paid >= 0', name='check_positive_amount_paid'),
+        Index('ix_sales_transactions_status', 'status'),
+        Index('ix_sales_transactions_payment_status', 'payment_status'),
+        Index('ix_sales_transactions_order_date', 'order_date'),
+        Index('ix_sales_transactions_customer', 'customer_id'),
+        Index('ix_sales_transactions_sales_person', 'sales_person_id'),
+    )
+
+
+class SalesTransactionItemModel(TimeStampedModel):
+    __tablename__ = "sales_transaction_items"
+
+    transaction_id = Column(UUID(as_uuid=True), ForeignKey("sales_transactions.id"), nullable=False)
+    inventory_item_master_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(DECIMAL(10, 2), nullable=False)
+    cost_price = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    discount_percentage = Column(DECIMAL(5, 2), default=0.0, nullable=False)
+    discount_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    tax_rate = Column(DECIMAL(5, 2), default=0.0, nullable=False)
+    tax_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    subtotal = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    total = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    serial_numbers = Column(JSON, default=list, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    # Relationships
+    transaction = relationship("SalesTransactionModel", back_populates="items")
+    inventory_item_master = relationship("InventoryItemMasterModel", backref="sales_items")
+    warehouse = relationship("WarehouseModel", backref="sales_items")
+    return_items = relationship("SalesReturnItemModel", back_populates="sales_item", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint('quantity > 0', name='check_positive_sales_quantity'),
+        CheckConstraint('unit_price >= 0', name='check_non_negative_unit_price'),
+        CheckConstraint('cost_price >= 0', name='check_non_negative_cost_price'),
+        CheckConstraint('discount_percentage >= 0 AND discount_percentage <= 100', name='check_discount_percentage_range'),
+        CheckConstraint('discount_amount >= 0', name='check_non_negative_discount_amount'),
+        CheckConstraint('tax_rate >= 0 AND tax_rate <= 100', name='check_tax_rate_range'),
+        CheckConstraint('tax_amount >= 0', name='check_non_negative_tax_amount'),
+        Index('ix_sales_transaction_items_transaction', 'transaction_id'),
+        Index('ix_sales_transaction_items_inventory', 'inventory_item_master_id'),
+        Index('ix_sales_transaction_items_warehouse', 'warehouse_id'),
+    )
+
+
+class SalesReturnModel(TimeStampedModel):
+    __tablename__ = "sales_returns"
+
+    return_id = Column(String(20), nullable=False, unique=True, index=True)
+    sales_transaction_id = Column(UUID(as_uuid=True), ForeignKey("sales_transactions.id"), nullable=False)
+    return_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    reason = Column(Text, nullable=False)
+    # TODO: Add foreign key to user table when authentication is implemented
+    approved_by_id = Column(UUID(as_uuid=True), nullable=True)
+    refund_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    restocking_fee = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+
+    # Relationships
+    sales_transaction = relationship("SalesTransactionModel", back_populates="returns")
+    items = relationship("SalesReturnItemModel", back_populates="sales_return", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint('refund_amount >= 0', name='check_positive_refund_amount'),
+        CheckConstraint('restocking_fee >= 0', name='check_positive_restocking_fee'),
+        Index('ix_sales_returns_transaction', 'sales_transaction_id'),
+        Index('ix_sales_returns_return_date', 'return_date'),
+        Index('ix_sales_returns_approved_by', 'approved_by_id'),
+    )
+
+
+class SalesReturnItemModel(TimeStampedModel):
+    __tablename__ = "sales_return_items"
+
+    sales_return_id = Column(UUID(as_uuid=True), ForeignKey("sales_returns.id"), nullable=False)
+    sales_item_id = Column(UUID(as_uuid=True), ForeignKey("sales_transaction_items.id"), nullable=False)
+    quantity = Column(Integer, nullable=False)
+    condition = Column(String(50), nullable=False)
+    serial_numbers = Column(JSON, default=list, nullable=False)
+
+    # Relationships
+    sales_return = relationship("SalesReturnModel", back_populates="items")
+    sales_item = relationship("SalesTransactionItemModel", back_populates="return_items")
+
+    __table_args__ = (
+        CheckConstraint('quantity > 0', name='check_positive_return_quantity'),
+        Index('ix_sales_return_items_return', 'sales_return_id'),
+        Index('ix_sales_return_items_sales_item', 'sales_item_id'),
+    )
+
+
+# Purchase Transaction Enums
+class PurchaseStatus(str, enum.Enum):
+    DRAFT = "DRAFT"
+    CONFIRMED = "CONFIRMED"
+    PROCESSING = "PROCESSING"
+    RECEIVED = "RECEIVED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+# WarrantyPeriodType enum already exists, so we just reference it in string form
+
+
+class PurchaseTransactionModel(TimeStampedModel):
+    __tablename__ = "purchase_transactions"
+
+    transaction_id = Column(String(255), nullable=False, unique=True, index=True)
+    transaction_date = Column(Date, nullable=False, index=True)
+    vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendors.id"), nullable=False)
+    status = Column(Enum(PurchaseStatus), default=PurchaseStatus.DRAFT, nullable=False)
+    total_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    grand_total = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+    purchase_order_number = Column(String(255), nullable=True, index=True)
+    remarks = Column(Text, nullable=True)
+
+    # Relationships
+    vendor = relationship("VendorModel", backref="purchase_transactions")
+    items = relationship("PurchaseTransactionItemModel", back_populates="transaction", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint('total_amount >= 0', name='check_positive_total_amount'),
+        CheckConstraint('grand_total >= 0', name='check_positive_grand_total'),
+        Index('ix_purchase_transactions_status', 'status'),
+        Index('ix_purchase_transactions_vendor', 'vendor_id'),
+        Index('ix_purchase_transactions_date', 'transaction_date'),
+        Index('ix_purchase_transactions_po_number', 'purchase_order_number'),
+    )
+
+
+class PurchaseTransactionItemModel(TimeStampedModel):
+    __tablename__ = "purchase_transaction_items"
+
+    transaction_id = Column(UUID(as_uuid=True), ForeignKey("purchase_transactions.id"), nullable=False)
+    inventory_item_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(DECIMAL(10, 2), nullable=False)
+    discount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    tax_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    total_price = Column(DECIMAL(10, 2), default=0.0, nullable=False)
+    serial_number = Column(JSON, default=list, nullable=False)
+    remarks = Column(Text, nullable=True)
+    warranty_period_type = Column(Enum('DAYS', 'MONTHS', 'YEARS', name='warrantyperiodtype'), nullable=True)
+    warranty_period = Column(Integer, nullable=True)
+
+    # Relationships
+    transaction = relationship("PurchaseTransactionModel", back_populates="items")
+    inventory_item = relationship("InventoryItemMasterModel", backref="purchase_items")
+    warehouse = relationship("WarehouseModel", backref="purchase_items")
+
+    __table_args__ = (
+        CheckConstraint('quantity > 0', name='check_positive_purchase_quantity'),
+        CheckConstraint('unit_price >= 0', name='check_non_negative_unit_price'),
+        CheckConstraint('discount >= 0', name='check_non_negative_discount'),
+        CheckConstraint('tax_amount >= 0', name='check_non_negative_tax_amount'),
+        CheckConstraint('total_price >= 0', name='check_non_negative_total_price'),
+        CheckConstraint('warranty_period IS NULL OR warranty_period > 0', name='check_positive_warranty_period'),
+        CheckConstraint(
+            '(warranty_period_type IS NULL AND warranty_period IS NULL) OR '
+            '(warranty_period_type IS NOT NULL AND warranty_period IS NOT NULL)',
+            name='check_warranty_consistency'
+        ),
+        Index('ix_purchase_transaction_items_transaction', 'transaction_id'),
+        Index('ix_purchase_transaction_items_inventory', 'inventory_item_id'),
+        Index('ix_purchase_transaction_items_warehouse', 'warehouse_id'),
     )

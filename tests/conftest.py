@@ -11,8 +11,12 @@ from src.domain.entities.inventory_item_master import InventoryItemMaster
 from src.domain.entities.line_item import LineItem
 from src.domain.entities.contact_number import ContactNumber
 from src.domain.entities.item_category import ItemCategory, ItemSubCategory
+from src.domain.entities.purchase_order import PurchaseOrder, PurchaseOrderStatus
+from src.domain.entities.purchase_order_line_item import PurchaseOrderLineItem
+from src.domain.entities.sales import SalesTransaction, SalesTransactionItem, SalesReturn, SalesReturnItem
 from src.domain.value_objects.address import Address
 from src.domain.value_objects.phone_number import PhoneNumber
+from src.domain.value_objects.sales import SalesStatus, PaymentStatus, PaymentTerms
 
 
 @pytest.fixture
@@ -625,3 +629,470 @@ def mock_inventory_service():
     service.update_dimensions = AsyncMock()
     service.count_inventory_item_masters = AsyncMock()
     return service
+
+
+# Purchase Order Test Fixtures
+
+@pytest.fixture
+def sample_purchase_order_data():
+    """Sample purchase order data for testing"""
+    from datetime import date
+    return {
+        "order_number": "PO-2024-001",
+        "order_date": date.today(),
+        "expected_delivery_date": date.today(),
+        "reference_number": "REF-001",
+        "invoice_number": "INV-001",
+        "notes": "Test purchase order",
+        "status": PurchaseOrderStatus.DRAFT
+    }
+
+
+@pytest.fixture
+def sample_purchase_order(sample_purchase_order_data, sample_vendor):
+    """Sample purchase order entity for testing"""
+    return PurchaseOrder(
+        order_number=sample_purchase_order_data["order_number"],
+        vendor_id=sample_vendor.id,
+        order_date=sample_purchase_order_data["order_date"],
+        expected_delivery_date=sample_purchase_order_data["expected_delivery_date"],
+        reference_number=sample_purchase_order_data["reference_number"],
+        invoice_number=sample_purchase_order_data["invoice_number"],
+        notes=sample_purchase_order_data["notes"],
+        created_by="test_user"
+    )
+
+
+@pytest.fixture
+def sample_purchase_order_line_item_data():
+    """Sample purchase order line item data for testing"""
+    return {
+        "quantity": 2,
+        "unit_price": Decimal("100.00"),
+        "discount": Decimal("10.00"),
+        "tax_amount": Decimal("18.00"),
+        "serial_number": "TEST-SN-001",
+        "reference_number": "LINE-REF-001",
+        "rental_rate": Decimal("25.00"),
+        "replacement_cost": Decimal("500.00"),
+        "late_fee_rate": Decimal("5.00"),
+        "sell_tax_rate": 10,
+        "rent_tax_rate": 8,
+        "rentable": True,
+        "sellable": False,
+        "selling_price": Decimal("150.00")
+    }
+
+
+@pytest.fixture
+def sample_purchase_order_line_item(sample_purchase_order_line_item_data, sample_purchase_order, 
+                                   sample_inventory_item, sample_warehouse):
+    """Sample purchase order line item entity for testing"""
+    return PurchaseOrderLineItem(
+        purchase_order_id=sample_purchase_order.id,
+        inventory_item_master_id=sample_inventory_item.id,
+        warehouse_id=sample_warehouse.id,
+        quantity=sample_purchase_order_line_item_data["quantity"],
+        unit_price=sample_purchase_order_line_item_data["unit_price"],
+        discount=sample_purchase_order_line_item_data["discount"],
+        tax_amount=sample_purchase_order_line_item_data["tax_amount"],
+        serial_number=sample_purchase_order_line_item_data["serial_number"],
+        reference_number=sample_purchase_order_line_item_data["reference_number"],
+        rental_rate=sample_purchase_order_line_item_data["rental_rate"],
+        replacement_cost=sample_purchase_order_line_item_data["replacement_cost"],
+        late_fee_rate=sample_purchase_order_line_item_data["late_fee_rate"],
+        sell_tax_rate=sample_purchase_order_line_item_data["sell_tax_rate"],
+        rent_tax_rate=sample_purchase_order_line_item_data["rent_tax_rate"],
+        rentable=sample_purchase_order_line_item_data["rentable"],
+        sellable=sample_purchase_order_line_item_data["sellable"],
+        selling_price=sample_purchase_order_line_item_data["selling_price"],
+        created_by="test_user"
+    )
+
+
+@pytest.fixture
+def sample_create_purchase_order_items_data(sample_inventory_item, sample_warehouse):
+    """Sample items data for creating purchase order"""
+    return [
+        {
+            "inventory_item_master_id": sample_inventory_item.id,
+            "warehouse_id": sample_warehouse.id,
+            "quantity": 2,
+            "unit_price": 100.00,
+            "discount": 10.00,
+            "tax_amount": 18.00,
+            "serial_number": "TEST-SN-001",
+            "rental_rate": 25.00,
+            "replacement_cost": 500.00,
+            "rentable": True,
+            "sellable": False
+        },
+        {
+            "inventory_item_master_id": sample_inventory_item.id,
+            "warehouse_id": sample_warehouse.id,
+            "quantity": 1,
+            "unit_price": 200.00,
+            "discount": 0.00,
+            "tax_amount": 20.00,
+            "serial_number": "TEST-SN-002",
+            "rental_rate": 50.00,
+            "replacement_cost": 1000.00,
+            "rentable": True,
+            "sellable": True,
+            "selling_price": 250.00
+        }
+    ]
+
+
+# Mock Purchase Order Repository Fixtures
+
+@pytest.fixture
+def mock_purchase_order_repository():
+    """Mock purchase order repository for testing"""
+    repo = Mock()
+    repo.save = AsyncMock()
+    repo.find_by_id = AsyncMock()
+    repo.find_all = AsyncMock()
+    repo.find_by_vendor = AsyncMock()
+    repo.find_by_status = AsyncMock()
+    repo.find_by_date_range = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.get_next_order_number = AsyncMock()
+    repo.search_purchase_orders = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_purchase_order_line_item_repository():
+    """Mock purchase order line item repository for testing"""
+    repo = Mock()
+    repo.save = AsyncMock()
+    repo.find_by_id = AsyncMock()
+    repo.find_by_purchase_order = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def purchase_order_test_scenarios():
+    """Test scenarios for purchase order testing"""
+    return {
+        "create_scenarios": [
+            {
+                "description": "Basic purchase order with single item",
+                "expected_success": True,
+                "item_count": 1
+            },
+            {
+                "description": "Purchase order with multiple items",
+                "expected_success": True,
+                "item_count": 3
+            },
+            {
+                "description": "Purchase order with invalid vendor",
+                "expected_success": False,
+                "error_type": "ValueError"
+            }
+        ],
+        "status_transitions": [
+            {
+                "from_status": PurchaseOrderStatus.DRAFT,
+                "to_status": PurchaseOrderStatus.ORDERED,
+                "allowed": True
+            },
+            {
+                "from_status": PurchaseOrderStatus.ORDERED,
+                "to_status": PurchaseOrderStatus.RECEIVED,
+                "allowed": True
+            },
+            {
+                "from_status": PurchaseOrderStatus.RECEIVED,
+                "to_status": PurchaseOrderStatus.DRAFT,
+                "allowed": False
+            }
+        ]
+    }
+
+
+# Sales Module Test Fixtures
+
+@pytest.fixture
+def sample_sales_transaction_data():
+    """Sample sales transaction data for testing"""
+    from datetime import date
+    return {
+        "transaction_id": "SO-2024-001",
+        "invoice_number": "INV-2024-001",
+        "order_date": datetime.now(),
+        "delivery_date": datetime.now(),
+        "status": SalesStatus.DRAFT,
+        "payment_status": PaymentStatus.PENDING,
+        "payment_terms": PaymentTerms.NET_30,
+        "subtotal": Decimal("1000.00"),
+        "discount_amount": Decimal("50.00"),
+        "tax_amount": Decimal("95.00"),
+        "shipping_amount": Decimal("25.00"),
+        "grand_total": Decimal("1070.00"),
+        "amount_paid": Decimal("0.00"),
+        "shipping_address": "123 Shipping St, New York, NY 10001",
+        "billing_address": "456 Billing Ave, New York, NY 10002",
+        "purchase_order_number": "PO-CUST-001",
+        "notes": "Test sales order",
+        "customer_notes": "Please deliver before noon"
+    }
+
+
+@pytest.fixture
+def sample_sales_transaction(sample_sales_transaction_data, sample_customer):
+    """Sample sales transaction entity for testing"""
+    data = sample_sales_transaction_data.copy()
+    data['customer_id'] = sample_customer.id
+    return SalesTransaction(**data)
+
+
+@pytest.fixture
+def sample_sales_transaction_item_data():
+    """Sample sales transaction item data for testing"""
+    return {
+        "quantity": 2,
+        "unit_price": Decimal("500.00"),
+        "cost_price": Decimal("300.00"),
+        "discount_percentage": Decimal("5.00"),
+        "discount_amount": Decimal("50.00"),
+        "tax_rate": Decimal("10.00"),
+        "tax_amount": Decimal("95.00"),
+        "subtotal": Decimal("1000.00"),
+        "total": Decimal("1045.00"),
+        "serial_numbers": ["SN001", "SN002"],
+        "notes": "Item in good condition"
+    }
+
+
+@pytest.fixture
+def sample_sales_transaction_item(sample_sales_transaction_item_data, sample_sales_transaction, 
+                                 sample_inventory_item, sample_warehouse):
+    """Sample sales transaction item entity for testing"""
+    return SalesTransactionItem(
+        transaction_id=sample_sales_transaction.id,
+        inventory_item_master_id=sample_inventory_item.id,
+        warehouse_id=sample_warehouse.id,
+        **sample_sales_transaction_item_data
+    )
+
+
+@pytest.fixture
+def sample_sales_return_data():
+    """Sample sales return data for testing"""
+    return {
+        "return_id": "SR-2024-001",
+        "return_date": datetime.now(),
+        "reason": "Customer changed mind",
+        "refund_amount": Decimal("1045.00"),
+        "restocking_fee": Decimal("104.50")
+    }
+
+
+@pytest.fixture
+def sample_sales_return(sample_sales_return_data, sample_sales_transaction):
+    """Sample sales return entity for testing"""
+    return SalesReturn(
+        sales_transaction_id=sample_sales_transaction.id,
+        **sample_sales_return_data
+    )
+
+
+@pytest.fixture
+def sample_sales_return_item_data():
+    """Sample sales return item data for testing"""
+    return {
+        "quantity": 1,
+        "condition": "GOOD",
+        "serial_numbers": ["SN001"]
+    }
+
+
+@pytest.fixture
+def sample_sales_return_item(sample_sales_return_item_data, sample_sales_return, 
+                            sample_sales_transaction_item):
+    """Sample sales return item entity for testing"""
+    return SalesReturnItem(
+        sales_return_id=sample_sales_return.id,
+        sales_item_id=sample_sales_transaction_item.id,
+        **sample_sales_return_item_data
+    )
+
+
+# Mock Sales Repositories
+
+@pytest.fixture
+def mock_sales_transaction_repository():
+    """Mock sales transaction repository for testing"""
+    repo = Mock()
+    repo.create = AsyncMock()
+    repo.get_by_id = AsyncMock()
+    repo.get_by_transaction_id = AsyncMock()
+    repo.get_by_invoice_number = AsyncMock()
+    repo.get_by_customer = AsyncMock()
+    repo.get_by_status = AsyncMock()
+    repo.get_by_payment_status = AsyncMock()
+    repo.get_overdue_transactions = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.search = AsyncMock()
+    repo.get_next_transaction_id = AsyncMock()
+    repo.list = AsyncMock()
+    repo.count = AsyncMock()
+    repo.get_sales_summary = AsyncMock()
+    repo.get_top_customers = AsyncMock()
+    repo.get_sales_by_period = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_sales_transaction_item_repository():
+    """Mock sales transaction item repository for testing"""
+    repo = Mock()
+    repo.create = AsyncMock()
+    repo.create_many = AsyncMock()
+    repo.get_by_id = AsyncMock()
+    repo.get_by_transaction = AsyncMock()
+    repo.get_by_inventory_item = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.delete_by_transaction = AsyncMock()
+    repo.get_sales_by_item = AsyncMock()
+    repo.get_top_selling_items = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_sales_return_repository():
+    """Mock sales return repository for testing"""
+    repo = Mock()
+    repo.create = AsyncMock()
+    repo.get_by_id = AsyncMock()
+    repo.get_by_return_id = AsyncMock()
+    repo.get_by_transaction = AsyncMock()
+    repo.get_pending_approval = AsyncMock()
+    repo.approve = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.list = AsyncMock()
+    repo.get_return_summary = AsyncMock()
+    repo.get_next_return_id = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_sales_return_item_repository():
+    """Mock sales return item repository for testing"""
+    repo = Mock()
+    repo.create = AsyncMock()
+    repo.create_many = AsyncMock()
+    repo.get_by_id = AsyncMock()
+    repo.get_by_return = AsyncMock()
+    repo.get_by_sales_item = AsyncMock()
+    repo.update = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.delete_by_return = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_id_manager_repository():
+    """Mock ID manager repository for testing"""
+    repo = Mock()
+    repo.get_next_id = AsyncMock()
+    return repo
+
+
+@pytest.fixture
+def mock_inventory_stock_movement_service():
+    """Mock inventory stock movement service for testing"""
+    service = Mock()
+    service.reserve_stock = AsyncMock()
+    service.release_stock = AsyncMock()
+    service.confirm_sale = AsyncMock()
+    service.process_return = AsyncMock()
+    service.check_availability = AsyncMock()
+    return service
+
+
+@pytest.fixture
+def sales_transaction_test_data():
+    """Test data for sales transaction creation"""
+    return {
+        "items": [
+            {
+                "inventory_item_master_id": uuid4(),
+                "warehouse_id": uuid4(),
+                "quantity": 2,
+                "unit_price": 500.00,
+                "discount_percentage": 5.0,
+                "tax_rate": 10.0,
+                "serial_numbers": ["SN001", "SN002"]
+            },
+            {
+                "inventory_item_master_id": uuid4(),
+                "warehouse_id": uuid4(),
+                "quantity": 1,
+                "unit_price": 1000.00,
+                "discount_percentage": 0.0,
+                "tax_rate": 10.0,
+                "serial_numbers": ["SN003"]
+            }
+        ],
+        "shipping_amount": 50.00,
+        "payment_terms": "NET_30",
+        "shipping_address": "789 Delivery Rd, Chicago, IL 60601",
+        "billing_address": "456 Invoice St, Chicago, IL 60602",
+        "purchase_order_number": "CUST-PO-123",
+        "notes": "Rush delivery requested"
+    }
+
+
+@pytest.fixture
+def sales_return_test_data():
+    """Test data for sales return creation"""
+    return {
+        "reason": "Product not as described",
+        "items": [
+            {
+                "sales_item_id": uuid4(),
+                "quantity": 1,
+                "condition": "GOOD",
+                "serial_numbers": ["SN001"]
+            }
+        ],
+        "restocking_fee": 10.0
+    }
+
+
+@pytest.fixture
+def sales_status_transitions():
+    """Valid sales status transitions for testing"""
+    return [
+        (SalesStatus.DRAFT, SalesStatus.CONFIRMED, True),
+        (SalesStatus.CONFIRMED, SalesStatus.PROCESSING, True),
+        (SalesStatus.PROCESSING, SalesStatus.SHIPPED, True),
+        (SalesStatus.SHIPPED, SalesStatus.DELIVERED, True),
+        (SalesStatus.DRAFT, SalesStatus.CANCELLED, True),
+        (SalesStatus.DELIVERED, SalesStatus.DRAFT, False),
+        (SalesStatus.CANCELLED, SalesStatus.CONFIRMED, False)
+    ]
+
+
+@pytest.fixture
+def payment_status_transitions():
+    """Valid payment status transitions for testing"""
+    return [
+        (PaymentStatus.PENDING, PaymentStatus.PARTIAL, True),
+        (PaymentStatus.PARTIAL, PaymentStatus.PAID, True),
+        (PaymentStatus.PENDING, PaymentStatus.PAID, True),
+        (PaymentStatus.PENDING, PaymentStatus.OVERDUE, True),
+        (PaymentStatus.PAID, PaymentStatus.REFUNDED, True),
+        (PaymentStatus.PAID, PaymentStatus.PENDING, False),
+        (PaymentStatus.REFUNDED, PaymentStatus.PAID, False)
+    ]

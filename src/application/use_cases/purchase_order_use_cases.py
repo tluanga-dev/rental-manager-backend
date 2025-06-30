@@ -3,6 +3,7 @@ from uuid import UUID
 from datetime import date
 from decimal import Decimal
 
+from ...core.config.logging import LoggingMixin, PerformanceLogger
 from ...domain.entities.purchase_order import PurchaseOrder, PurchaseOrderStatus
 from ...domain.entities.purchase_order_line_item import PurchaseOrderLineItem
 from ...domain.repositories.purchase_order_repository import PurchaseOrderRepository
@@ -13,7 +14,7 @@ from ...infrastructure.database.models import InventoryItemStockMovementModel, M
 from sqlalchemy.orm import Session
 
 
-class CreatePurchaseOrderUseCase:
+class CreatePurchaseOrderUseCase(LoggingMixin):
     def __init__(
         self,
         purchase_order_repository: PurchaseOrderRepository,
@@ -37,80 +38,139 @@ class CreatePurchaseOrderUseCase:
         notes: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> PurchaseOrder:
-        # Validate vendor exists
-        vendor = await self.vendor_repository.find_by_id(vendor_id)
-        if not vendor:
-            raise ValueError(f"Vendor with ID {vendor_id} not found")
+        with PerformanceLogger("create_purchase_order", self.logger):
+            self.logger.info(
+                "creating_purchase_order",
+                vendor_id=str(vendor_id),
+                order_date=str(order_date),
+                item_count=len(items),
+                created_by=created_by,
+                has_expected_delivery=expected_delivery_date is not None,
+                has_reference_number=reference_number is not None,
+            )
 
-        # Generate order number
-        order_number = await self.purchase_order_repository.get_next_order_number()
-
-        # Create purchase order
-        purchase_order = PurchaseOrder(
-            order_number=order_number,
-            vendor_id=vendor_id,
-            order_date=order_date,
-            expected_delivery_date=expected_delivery_date,
-            reference_number=reference_number,
-            invoice_number=invoice_number,
-            notes=notes,
-            created_by=created_by,
-        )
-
-        # Save purchase order
-        saved_order = await self.purchase_order_repository.save(purchase_order)
-
-        # Process line items
-        total_amount = Decimal("0.00")
-        total_tax = Decimal("0.00")
-        total_discount = Decimal("0.00")
-        
-        for item_data in items:
-            # Validate inventory item and warehouse
-            inventory_item = await self.inventory_repository.find_by_id(item_data["inventory_item_master_id"])
-            if not inventory_item:
-                raise ValueError(f"Inventory item with ID {item_data['inventory_item_master_id']} not found")
+            # Validate vendor exists
+            vendor = await self.vendor_repository.find_by_id(vendor_id)
+            if not vendor:
+                self.logger.error("vendor_not_found", vendor_id=str(vendor_id))
+                raise ValueError(f"Vendor with ID {vendor_id} not found")
             
-            # Note: Warehouse validation could be added here if we have a sync warehouse repository
+            self.logger.debug("vendor_validated", vendor_id=str(vendor_id), vendor_name=vendor.name)
 
-            # Create line item
-            line_item = PurchaseOrderLineItem(
-                purchase_order_id=saved_order.id,
-                inventory_item_master_id=item_data["inventory_item_master_id"],
-                warehouse_id=item_data["warehouse_id"],
-                quantity=item_data["quantity"],
-                unit_price=Decimal(str(item_data.get("unit_price", 0))),
-                serial_number=item_data.get("serial_number"),
-                discount=Decimal(str(item_data.get("discount", 0))),
-                tax_amount=Decimal(str(item_data.get("tax_amount", 0))),
-                reference_number=item_data.get("reference_number"),
-                warranty_period_type=item_data.get("warranty_period_type"),
-                warranty_period=item_data.get("warranty_period"),
-                rental_rate=Decimal(str(item_data.get("rental_rate", 0))),
-                replacement_cost=Decimal(str(item_data.get("replacement_cost", 0))),
-                late_fee_rate=Decimal(str(item_data.get("late_fee_rate", 0))),
-                sell_tax_rate=item_data.get("sell_tax_rate", 0),
-                rent_tax_rate=item_data.get("rent_tax_rate", 0),
-                rentable=item_data.get("rentable", True),
-                sellable=item_data.get("sellable", False),
-                selling_price=Decimal(str(item_data.get("selling_price", 0))),
+            # Generate order number
+            order_number = await self.purchase_order_repository.get_next_order_number()
+            self.logger.debug("order_number_generated", order_number=order_number)
+
+            # Create purchase order
+            purchase_order = PurchaseOrder(
+                order_number=order_number,
+                vendor_id=vendor_id,
+                order_date=order_date,
+                expected_delivery_date=expected_delivery_date,
+                reference_number=reference_number,
+                invoice_number=invoice_number,
+                notes=notes,
                 created_by=created_by,
             )
 
-            # Save line item
-            await self.line_item_repository.save(line_item)
+            # Save purchase order
+            saved_order = await self.purchase_order_repository.save(purchase_order)
+            self.logger.info(
+                "purchase_order_created", 
+                purchase_order_id=str(saved_order.id),
+                order_number=order_number,
+                vendor_id=str(vendor_id)
+            )
 
-            # Update totals
-            total_amount += line_item.amount
-            total_tax += line_item.tax_amount
-            total_discount += line_item.discount
+            # Process line items
+            total_amount = Decimal("0.00")
+            total_tax = Decimal("0.00")
+            total_discount = Decimal("0.00")
+            
+            self.logger.info("processing_line_items", item_count=len(items))
+            
+            for idx, item_data in enumerate(items):
+                self.logger.debug(
+                    "processing_line_item",
+                    item_index=idx,
+                    inventory_item_id=str(item_data["inventory_item_master_id"]),
+                    quantity=item_data["quantity"],
+                    unit_price=float(item_data.get("unit_price", 0))
+                )
+                
+                # Validate inventory item and warehouse
+                inventory_item = await self.inventory_repository.find_by_id(item_data["inventory_item_master_id"])
+                if not inventory_item:
+                    self.logger.error(
+                        "inventory_item_not_found",
+                        inventory_item_id=str(item_data["inventory_item_master_id"]),
+                        item_index=idx
+                    )
+                    raise ValueError(f"Inventory item with ID {item_data['inventory_item_master_id']} not found")
+                
+                self.logger.debug(
+                    "inventory_item_validated",
+                    inventory_item_id=str(inventory_item.id),
+                    item_name=inventory_item.name
+                )
+                
+                # Note: Warehouse validation could be added here if we have a sync warehouse repository
 
-        # Update purchase order totals
-        saved_order.update_totals(total_amount, total_tax, total_discount)
-        return await self.purchase_order_repository.update(saved_order)
+                # Create line item
+                line_item = PurchaseOrderLineItem(
+                    purchase_order_id=saved_order.id,
+                    inventory_item_master_id=item_data["inventory_item_master_id"],
+                    warehouse_id=item_data["warehouse_id"],
+                    quantity=item_data["quantity"],
+                    unit_price=Decimal(str(item_data.get("unit_price", 0))),
+                    serial_number=item_data.get("serial_number"),
+                    discount=Decimal(str(item_data.get("discount", 0))),
+                    tax_amount=Decimal(str(item_data.get("tax_amount", 0))),
+                    reference_number=item_data.get("reference_number"),
+                    warranty_period_type=item_data.get("warranty_period_type"),
+                    warranty_period=item_data.get("warranty_period"),
+                    rental_rate=Decimal(str(item_data.get("rental_rate", 0))),
+                    replacement_cost=Decimal(str(item_data.get("replacement_cost", 0))),
+                    late_fee_rate=Decimal(str(item_data.get("late_fee_rate", 0))),
+                    sell_tax_rate=item_data.get("sell_tax_rate", 0),
+                    rent_tax_rate=item_data.get("rent_tax_rate", 0),
+                    rentable=item_data.get("rentable", True),
+                    sellable=item_data.get("sellable", False),
+                    selling_price=Decimal(str(item_data.get("selling_price", 0))),
+                    created_by=created_by,
+                )
+
+                # Save line item
+                await self.line_item_repository.save(line_item)
+                self.logger.debug(
+                    "line_item_created",
+                    line_item_id=str(line_item.id),
+                    amount=float(line_item.amount)
+                )
+
+                # Update totals
+                total_amount += line_item.amount
+                total_tax += line_item.tax_amount
+                total_discount += line_item.discount
+
+            # Update purchase order totals
+            saved_order.update_totals(total_amount, total_tax, total_discount)
+            final_order = await self.purchase_order_repository.update(saved_order)
+            
+            self.logger.info(
+                "purchase_order_completed",
+                purchase_order_id=str(final_order.id),
+                order_number=final_order.order_number,
+                total_amount=float(total_amount),
+                total_tax=float(total_tax),
+                total_discount=float(total_discount),
+                line_items_count=len(items)
+            )
+            
+            return final_order
 
 
-class UpdatePurchaseOrderUseCase:
+class UpdatePurchaseOrderUseCase(LoggingMixin):
     def __init__(
         self,
         purchase_order_repository: PurchaseOrderRepository,
@@ -158,7 +218,7 @@ class UpdatePurchaseOrderUseCase:
         return await self.purchase_order_repository.update(purchase_order)
 
 
-class ReceivePurchaseOrderUseCase:
+class ReceivePurchaseOrderUseCase(LoggingMixin):
     def __init__(
         self,
         purchase_order_repository: PurchaseOrderRepository,
@@ -263,7 +323,7 @@ class ReceivePurchaseOrderUseCase:
         return await self.purchase_order_repository.update(purchase_order)
 
 
-class CancelPurchaseOrderUseCase:
+class CancelPurchaseOrderUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 
@@ -276,7 +336,7 @@ class CancelPurchaseOrderUseCase:
         return await self.purchase_order_repository.update(purchase_order)
 
 
-class GetPurchaseOrderUseCase:
+class GetPurchaseOrderUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 
@@ -284,7 +344,7 @@ class GetPurchaseOrderUseCase:
         return await self.purchase_order_repository.find_by_id(purchase_order_id)
 
 
-class GetPurchaseOrderDetailsUseCase:
+class GetPurchaseOrderDetailsUseCase(LoggingMixin):
     def __init__(
         self,
         purchase_order_repository: PurchaseOrderRepository,
@@ -309,7 +369,7 @@ class GetPurchaseOrderDetailsUseCase:
         }
 
 
-class ListPurchaseOrdersUseCase:
+class ListPurchaseOrdersUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 
@@ -332,7 +392,7 @@ class ListPurchaseOrdersUseCase:
             return await self.purchase_order_repository.find_all(skip, limit)
 
 
-class SearchPurchaseOrdersUseCase:
+class SearchPurchaseOrdersUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 

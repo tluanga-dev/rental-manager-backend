@@ -8,6 +8,8 @@ from .id_manager import IdManager
 from .inventory_item_master import InventoryItemMaster
 from .line_item import LineItem
 from .inventory_stock_movement import InventoryStockMovement
+from .purchase_transaction import PurchaseTransaction
+from .purchase_transaction_item import PurchaseTransactionItem
 
 __all__ = [
     "BaseEntity", 
@@ -19,5 +21,7 @@ __all__ = [
     "IdManager",
     "InventoryItemMaster",
     "LineItem",
-    "InventoryStockMovement"
+    "InventoryStockMovement",
+    "PurchaseTransaction",
+    "PurchaseTransactionItem"
 ]
