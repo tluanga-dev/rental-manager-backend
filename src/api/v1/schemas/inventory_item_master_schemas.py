@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional, List
-from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
 from .base_schemas import TimeStampedSchema, CreateBaseSchema, UpdateBaseSchema
@@ -12,9 +11,31 @@ class InventoryItemMasterCreateSchema(CreateBaseSchema):
     sku: str = Field(..., min_length=1, max_length=255, description="Stock Keeping Unit (will be stored in uppercase)")
     description: Optional[str] = Field(None, description="Detailed description of the item")
     contents: Optional[str] = Field(None, description="Contents or composition of the item")
-    item_sub_category_id: UUID = Field(..., description="Subcategory this item belongs to")
-    unit_of_measurement_id: UUID = Field(..., description="Unit of measurement for this item")
-    packaging_id: Optional[UUID] = Field(None, description="Packaging type for this item")
+    item_sub_category_id: str = Field(..., description="Subcategory this item belongs to (UUID as string)")
+    unit_of_measurement_id: str = Field(..., description="Unit of measurement for this item (UUID as string)")
+    packaging_id: Optional[str] = Field(None, description="Packaging type for this item (UUID as string)")
+
+    @validator('item_sub_category_id', 'unit_of_measurement_id')
+    def validate_required_uuid_fields(cls, v):
+        """Validate that UUID fields are valid UUID strings"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format')
+
+    @validator('packaging_id')
+    def validate_optional_uuid_field(cls, v):
+        """Validate that optional UUID field is valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format')
     tracking_type: str = Field(..., description="Tracking type: BULK or INDIVIDUAL")
     is_consumable: bool = Field(False, description="Whether this item is consumable")
     brand: Optional[str] = Field(None, max_length=255, description="Product brand or manufacturer name")
@@ -57,9 +78,21 @@ class InventoryItemMasterUpdateSchema(UpdateBaseSchema):
     sku: Optional[str] = Field(None, min_length=1, max_length=255, description="Stock Keeping Unit (will be stored in uppercase)")
     description: Optional[str] = Field(None, description="Detailed description of the item")
     contents: Optional[str] = Field(None, description="Contents or composition of the item")
-    item_sub_category_id: Optional[UUID] = Field(None, description="Subcategory this item belongs to")
-    unit_of_measurement_id: Optional[UUID] = Field(None, description="Unit of measurement for this item")
-    packaging_id: Optional[UUID] = Field(None, description="Packaging type for this item")
+    item_sub_category_id: Optional[str] = Field(None, description="Subcategory this item belongs to (UUID as string)")
+    unit_of_measurement_id: Optional[str] = Field(None, description="Unit of measurement for this item (UUID as string)")
+    packaging_id: Optional[str] = Field(None, description="Packaging type for this item (UUID as string)")
+
+    @validator('item_sub_category_id', 'unit_of_measurement_id', 'packaging_id')
+    def validate_uuid_fields(cls, v):
+        """Validate that UUID fields are valid UUID strings if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format')
     tracking_type: Optional[str] = Field(None, description="Tracking type: BULK or INDIVIDUAL")
     is_consumable: Optional[bool] = Field(None, description="Whether this item is consumable")
     brand: Optional[str] = Field(None, max_length=255, description="Product brand or manufacturer name")
@@ -96,9 +129,9 @@ class InventoryItemMasterResponseSchema(TimeStampedSchema):
     sku: str
     description: Optional[str] = None
     contents: Optional[str] = None
-    item_sub_category_id: UUID
-    unit_of_measurement_id: UUID
-    packaging_id: Optional[UUID] = None
+    item_sub_category_id: str
+    unit_of_measurement_id: str
+    packaging_id: Optional[str] = None
     tracking_type: str
     is_consumable: bool
     brand: Optional[str] = None

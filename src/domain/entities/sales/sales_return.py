@@ -7,7 +7,6 @@ for sales transactions.
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from uuid import UUID
 
 from src.domain.entities.base_entity import BaseEntity
 
@@ -22,13 +21,13 @@ class SalesReturn(BaseEntity):
     
     def __init__(
         self,
-        sales_transaction_id: UUID,
+        sales_transaction_id: str,
         return_date: datetime,
         reason: str,
         refund_amount: Decimal = Decimal("0"),
         restocking_fee: Decimal = Decimal("0"),
         return_id: Optional[str] = None,
-        approved_by_id: Optional[UUID] = None,
+        approved_by_id: Optional[str] = None,
         **kwargs
     ):
         """Initialize a sales return."""
@@ -56,7 +55,7 @@ class SalesReturn(BaseEntity):
         """Check if the return has been approved."""
         return self.approved_by_id is not None
     
-    def approve(self, approved_by_id: UUID) -> None:
+    def approve(self, approved_by_id: str) -> None:
         """
         Approve the return.
         

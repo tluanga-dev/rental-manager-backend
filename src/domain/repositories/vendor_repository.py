@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.vendor import Vendor
 
@@ -12,7 +11,7 @@ class VendorRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, vendor_id: UUID) -> Optional[Vendor]:
+    async def find_by_id(self, vendor_id: str) -> Optional[Vendor]:
         """Find a vendor by its ID."""
         pass
 
@@ -47,16 +46,16 @@ class VendorRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, vendor_id: UUID) -> bool:
+    async def delete(self, vendor_id: str) -> bool:
         """Delete a vendor by ID."""
         pass
 
     @abstractmethod
-    async def exists(self, vendor_id: UUID) -> bool:
+    async def exists(self, vendor_id: str) -> bool:
         """Check if a vendor exists by ID."""
         pass
 
     @abstractmethod
-    async def exists_by_email(self, email: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_email(self, email: str, exclude_id: Optional[str] = None) -> bool:
         """Check if a vendor exists by email, optionally excluding a specific ID."""
         pass

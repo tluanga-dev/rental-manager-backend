@@ -7,7 +7,6 @@ management according to the PRD requirements.
 
 from decimal import Decimal
 from typing import List, Optional
-from uuid import UUID
 
 from src.domain.entities.base_entity import BaseEntity
 
@@ -22,11 +21,11 @@ class PurchaseTransactionItem(BaseEntity):
     
     def __init__(
         self,
-        transaction_id: UUID,
-        inventory_item_id: UUID,
+        transaction_id: str,
+        inventory_item_id: str,
         quantity: int,
         unit_price: Decimal,
-        warehouse_id: Optional[UUID] = None,
+        warehouse_id: Optional[str] = None,
         serial_number: Optional[List[str]] = None,
         discount: Decimal = Decimal("0.00"),
         tax_amount: Decimal = Decimal("0.00"),

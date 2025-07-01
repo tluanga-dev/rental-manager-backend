@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 import re
 
 from pydantic import BaseModel, Field, field_validator
@@ -81,7 +80,18 @@ class ItemSubCategoryCreateSchema(CreateBaseSchema):
     name: str = Field(..., min_length=1, max_length=255, description="Subcategory name")
     abbreviation: str = Field(..., min_length=6, max_length=6, description="Subcategory abbreviation (exactly 6 characters)")
     description: Optional[str] = Field(None, description="Subcategory description")
-    item_category_id: UUID = Field(..., description="Parent category ID")
+    item_category_id: str = Field(..., description="Parent category ID (UUID as string)")
+
+    @field_validator("item_category_id")
+    @classmethod
+    def validate_item_category_id(cls, v: str) -> str:
+        """Validate that item_category_id is a valid UUID string format"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for item_category_id')
 
     @field_validator("name")
     @classmethod
@@ -112,7 +122,20 @@ class ItemSubCategoryUpdateSchema(UpdateBaseSchema):
     name: Optional[str] = Field(None, min_length=1, max_length=255, description="Subcategory name")
     abbreviation: Optional[str] = Field(None, min_length=6, max_length=6, description="Subcategory abbreviation")
     description: Optional[str] = Field(None, description="Subcategory description")
-    item_category_id: Optional[UUID] = Field(None, description="Parent category ID")
+    item_category_id: Optional[str] = Field(None, description="Parent category ID (UUID as string)")
+
+    @field_validator("item_category_id")
+    @classmethod
+    def validate_item_category_id(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that item_category_id is a valid UUID string format if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for item_category_id')
 
     @field_validator("name")
     @classmethod
@@ -145,7 +168,7 @@ class ItemSubCategoryResponseSchema(TimeStampedSchema):
     name: str
     abbreviation: str
     description: Optional[str] = None
-    item_category_id: UUID
+    item_category_id: str
     item_category: Optional[ItemCategoryResponseSchema] = None  # Optional nested category
 
 

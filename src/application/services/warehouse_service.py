@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.warehouse import Warehouse
 from ...domain.repositories.warehouse_repository import WarehouseRepository
@@ -16,10 +15,13 @@ class WarehouseService:
         remarks: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> Warehouse:
+        # Normalize label to uppercase for consistency
+        normalized_label = label.upper() if label else ""
+        
         # Check if label already exists
-        existing_warehouse = await self.warehouse_repository.get_by_label(label)
+        existing_warehouse = await self.warehouse_repository.get_by_label(normalized_label)
         if existing_warehouse:
-            raise ValueError(f"Warehouse with label '{label}' already exists")
+            raise ValueError(f"Warehouse with label '{normalized_label}' already exists")
 
         warehouse = Warehouse(
             name=name,
@@ -29,7 +31,7 @@ class WarehouseService:
         )
         return await self.warehouse_repository.create(warehouse)
 
-    async def get_warehouse_by_id(self, warehouse_id: UUID) -> Optional[Warehouse]:
+    async def get_warehouse_by_id(self, warehouse_id: str) -> Optional[Warehouse]:
         return await self.warehouse_repository.get_by_id(warehouse_id)
 
     async def get_warehouse_by_label(self, label: str) -> Optional[Warehouse]:
@@ -42,7 +44,7 @@ class WarehouseService:
 
     async def update_warehouse(
         self,
-        warehouse_id: UUID,
+        warehouse_id: str,
         name: Optional[str] = None,
         label: Optional[str] = None,
         remarks: Optional[str] = None,
@@ -52,10 +54,12 @@ class WarehouseService:
             raise ValueError(f"Warehouse with id {warehouse_id} not found")
 
         # Check if new label conflicts with existing ones
-        if label and label.upper() != warehouse.label:
-            existing_warehouse = await self.warehouse_repository.get_by_label(label)
-            if existing_warehouse:
-                raise ValueError(f"Warehouse with label '{label}' already exists")
+        if label:
+            normalized_label = label.upper()
+            if normalized_label != warehouse.label:
+                existing_warehouse = await self.warehouse_repository.get_by_label(normalized_label)
+                if existing_warehouse:
+                    raise ValueError(f"Warehouse with label '{normalized_label}' already exists")
 
         if name:
             warehouse.update_name(name)
@@ -66,7 +70,7 @@ class WarehouseService:
 
         return await self.warehouse_repository.update(warehouse)
 
-    async def deactivate_warehouse(self, warehouse_id: UUID) -> bool:
+    async def deactivate_warehouse(self, warehouse_id: str) -> bool:
         warehouse = await self.warehouse_repository.get_by_id(warehouse_id)
         if not warehouse:
             raise ValueError(f"Warehouse with id {warehouse_id} not found")
@@ -75,7 +79,7 @@ class WarehouseService:
         await self.warehouse_repository.update(warehouse)
         return True
 
-    async def activate_warehouse(self, warehouse_id: UUID) -> bool:
+    async def activate_warehouse(self, warehouse_id: str) -> bool:
         warehouse = await self.warehouse_repository.get_by_id(warehouse_id)
         if not warehouse:
             raise ValueError(f"Warehouse with id {warehouse_id} not found")

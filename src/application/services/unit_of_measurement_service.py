@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.unit_of_measurement import UnitOfMeasurement
 from ...domain.repositories.unit_of_measurement_repository import UnitOfMeasurementRepository
@@ -34,7 +33,7 @@ class UnitOfMeasurementService:
         )
         return await self.unit_repository.create(unit_of_measurement)
 
-    async def get_unit_by_id(self, unit_id: UUID) -> Optional[UnitOfMeasurement]:
+    async def get_unit_by_id(self, unit_id: str) -> Optional[UnitOfMeasurement]:
         return await self.unit_repository.get_by_id(unit_id)
 
     async def get_unit_by_name(self, name: str) -> Optional[UnitOfMeasurement]:
@@ -50,7 +49,7 @@ class UnitOfMeasurementService:
 
     async def update_unit_of_measurement(
         self,
-        unit_id: UUID,
+        unit_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
         description: Optional[str] = None,
@@ -80,7 +79,7 @@ class UnitOfMeasurementService:
 
         return await self.unit_repository.update(unit)
 
-    async def deactivate_unit(self, unit_id: UUID) -> bool:
+    async def deactivate_unit(self, unit_id: str) -> bool:
         unit = await self.unit_repository.get_by_id(unit_id)
         if not unit:
             raise ValueError(f"Unit of measurement with id {unit_id} not found")
@@ -89,7 +88,7 @@ class UnitOfMeasurementService:
         await self.unit_repository.update(unit)
         return True
 
-    async def activate_unit(self, unit_id: UUID) -> bool:
+    async def activate_unit(self, unit_id: str) -> bool:
         unit = await self.unit_repository.get_by_id(unit_id)
         if not unit:
             raise ValueError(f"Unit of measurement with id {unit_id} not found")

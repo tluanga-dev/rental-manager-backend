@@ -6,7 +6,6 @@ line items within a sales transaction.
 
 from decimal import Decimal
 from typing import List, Optional
-from uuid import UUID
 
 from src.domain.entities.base_entity import BaseEntity
 
@@ -21,9 +20,9 @@ class SalesTransactionItem(BaseEntity):
     
     def __init__(
         self,
-        transaction_id: UUID,
-        inventory_item_master_id: UUID,
-        warehouse_id: UUID,
+        transaction_id: str,
+        inventory_item_master_id: str,
+        warehouse_id: str,
         quantity: int,
         unit_price: Decimal,
         cost_price: Decimal = Decimal("0"),

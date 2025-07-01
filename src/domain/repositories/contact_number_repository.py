@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from ..entities.contact_number import ContactNumber
 
@@ -11,7 +10,7 @@ class ContactNumberRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, contact_id: UUID) -> Optional[ContactNumber]:
+    async def find_by_id(self, contact_id: str) -> Optional[ContactNumber]:
         pass
 
     @abstractmethod
@@ -19,7 +18,7 @@ class ContactNumberRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_entity(self, entity_type: str, entity_id: UUID) -> List[ContactNumber]:
+    async def find_by_entity(self, entity_type: str, entity_id: str) -> List[ContactNumber]:
         pass
 
     @abstractmethod
@@ -27,7 +26,7 @@ class ContactNumberRepository(ABC):
         pass
 
     @abstractmethod
-    async def exists_for_entity(self, entity_type: str, entity_id: UUID, number: str) -> bool:
+    async def exists_for_entity(self, entity_type: str, entity_id: str, number: str) -> bool:
         pass
 
     @abstractmethod
@@ -39,15 +38,15 @@ class ContactNumberRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, contact_id: UUID) -> bool:
+    async def delete(self, contact_id: str) -> bool:
         pass
 
     @abstractmethod
-    async def exists(self, contact_id: UUID) -> bool:
+    async def exists(self, contact_id: str) -> bool:
         pass
 
     @abstractmethod
-    async def get_entity_contact_summary(self, entity_type: str, entity_id: UUID) -> Dict[str, Any]:
+    async def get_entity_contact_summary(self, entity_type: str, entity_id: str) -> Dict[str, Any]:
         pass
 
     @abstractmethod

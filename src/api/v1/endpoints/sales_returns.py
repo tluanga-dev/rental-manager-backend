@@ -5,7 +5,6 @@ This module defines the FastAPI endpoints for sales return operations.
 
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -175,7 +174,7 @@ async def list_sales_returns(
 
 @router.get("/{return_id}", response_model=SalesReturnDetailSchema)
 async def get_sales_return(
-    return_id: UUID,
+    return_id: str,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
     """Get a specific sales return by ID."""
@@ -197,7 +196,7 @@ async def get_sales_return(
 
 @router.patch("/{return_id}", response_model=SalesReturnResponseSchema)
 async def update_sales_return(
-    return_id: UUID,
+    return_id: str,
     update_data: SalesReturnUpdateSchema,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
@@ -234,11 +233,11 @@ async def update_sales_return(
 
 @router.post("/{return_id}/approve", response_model=SalesReturnResponseSchema)
 async def approve_sales_return(
-    return_id: UUID,
+    return_id: str,
     approve_data: ApproveReturnSchema,
     repositories: Dict[str, Any] = Depends(get_repositories),
     # In real app, get current user from auth
-    current_user_id: UUID = Query(..., description="Current user ID")
+    current_user_id: str = Query(..., description="Current user ID")
 ):
     """Approve a sales return."""
     try:
@@ -298,7 +297,7 @@ async def get_pending_approval_returns(
 
 @router.get("/by-transaction/{transaction_id}", response_model=List[SalesReturnResponseSchema])
 async def get_returns_by_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
     """Get all returns for a specific sales transaction."""

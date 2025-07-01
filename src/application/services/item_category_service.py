@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.item_category import ItemCategory, ItemSubCategory
 from ...domain.repositories.item_category_repository import ItemCategoryRepository, ItemSubCategoryRepository
@@ -47,7 +46,7 @@ class ItemCategoryService:
     ) -> ItemCategory:
         return await self.create_category_use_case.execute(name, abbreviation, description, created_by)
 
-    async def get_category(self, category_id: UUID) -> Optional[ItemCategory]:
+    async def get_category(self, category_id: str) -> Optional[ItemCategory]:
         return await self.get_category_use_case.execute(category_id)
 
     async def get_category_by_name(self, name: str) -> Optional[ItemCategory]:
@@ -58,7 +57,7 @@ class ItemCategoryService:
 
     async def update_category(
         self,
-        category_id: UUID,
+        category_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
         description: Optional[str] = None,
@@ -68,7 +67,7 @@ class ItemCategoryService:
             category_id, name, abbreviation, description, is_active
         )
 
-    async def delete_category(self, category_id: UUID) -> bool:
+    async def delete_category(self, category_id: str) -> bool:
         return await self.delete_category_use_case.execute(category_id)
 
     async def list_categories(self, skip: int = 0, limit: int = 100) -> List[ItemCategory]:
@@ -82,7 +81,7 @@ class ItemCategoryService:
         self,
         name: str,
         abbreviation: str,
-        item_category_id: UUID,
+        item_category_id: str,
         description: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> ItemSubCategory:
@@ -90,7 +89,7 @@ class ItemCategoryService:
             name, abbreviation, item_category_id, description, created_by
         )
 
-    async def get_category_with_subcategories(self, category_id: UUID) -> tuple[Optional[ItemCategory], List[ItemSubCategory]]:
+    async def get_category_with_subcategories(self, category_id: str) -> tuple[Optional[ItemCategory], List[ItemSubCategory]]:
         category = await self.get_category_use_case.execute(category_id)
         subcategories = []
         if category:
@@ -119,7 +118,7 @@ class ItemSubCategoryService:
         self,
         name: str,
         abbreviation: str,
-        item_category_id: UUID,
+        item_category_id: str,
         description: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> ItemSubCategory:
@@ -127,21 +126,21 @@ class ItemSubCategoryService:
             name, abbreviation, item_category_id, description, created_by
         )
 
-    async def get_subcategory(self, subcategory_id: UUID) -> Optional[ItemSubCategory]:
+    async def get_subcategory(self, subcategory_id: str) -> Optional[ItemSubCategory]:
         return await self.get_subcategory_use_case.execute(subcategory_id)
 
     async def get_subcategory_by_abbreviation(self, abbreviation: str) -> Optional[ItemSubCategory]:
         return await self.get_subcategory_by_abbreviation_use_case.execute(abbreviation)
 
-    async def get_subcategories_by_category(self, category_id: UUID, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
+    async def get_subcategories_by_category(self, category_id: str, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
         return await self.get_subcategories_by_category_use_case.execute(category_id, skip, limit)
 
     async def update_subcategory(
         self,
-        subcategory_id: UUID,
+        subcategory_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
-        item_category_id: Optional[UUID] = None,
+        item_category_id: Optional[str] = None,
         description: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> ItemSubCategory:
@@ -149,16 +148,16 @@ class ItemSubCategoryService:
             subcategory_id, name, abbreviation, item_category_id, description, is_active
         )
 
-    async def delete_subcategory(self, subcategory_id: UUID) -> bool:
+    async def delete_subcategory(self, subcategory_id: str) -> bool:
         return await self.delete_subcategory_use_case.execute(subcategory_id)
 
     async def list_subcategories(self, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
         return await self.list_subcategories_use_case.execute(skip, limit)
 
-    async def search_subcategories(self, query: str, category_id: Optional[UUID] = None, limit: int = 10) -> List[ItemSubCategory]:
+    async def search_subcategories(self, query: str, category_id: Optional[str] = None, limit: int = 10) -> List[ItemSubCategory]:
         return await self.search_subcategories_use_case.execute(query, category_id, limit)
     
-    async def count_subcategories_by_category(self, category_id: UUID) -> int:
+    async def count_subcategories_by_category(self, category_id: str) -> int:
         """Count the number of active subcategories for a given category."""
         subcategories = await self.get_subcategories_by_category_use_case.execute(category_id, skip=0, limit=1000)
         return len([sub for sub in subcategories if sub.is_active])

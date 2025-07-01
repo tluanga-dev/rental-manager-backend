@@ -1,5 +1,4 @@
 from typing import Optional, List, Dict, Any
-from uuid import UUID
 
 from pydantic import BaseModel, Field, validator
 from .base_schemas import TimeStampedSchema, CreateBaseSchema, UpdateBaseSchema
@@ -28,7 +27,17 @@ class PhoneNumberSchema(BaseModel):
 class ContactNumberCreateSchema(CreateBaseSchema):
     number: str = Field(..., description="Phone number")
     entity_type: str = Field(..., min_length=1, max_length=50, description="Type of entity this contact belongs to")
-    entity_id: UUID = Field(..., description="ID of the entity this contact belongs to")
+    entity_id: str = Field(..., description="ID of the entity this contact belongs to (UUID as string)")
+
+    @validator('entity_id')
+    def validate_entity_id_format(cls, v):
+        """Validate that entity_id is a valid UUID string format"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for entity_id')
 
     @validator('number')
     def validate_phone_number(cls, v):
@@ -61,7 +70,19 @@ class ContactNumberCreateSchema(CreateBaseSchema):
 class ContactNumberUpdateSchema(UpdateBaseSchema):
     number: Optional[str] = Field(None, description="Phone number")
     entity_type: Optional[str] = Field(None, min_length=1, max_length=50, description="Type of entity")
-    entity_id: Optional[UUID] = Field(None, description="ID of the entity")
+    entity_id: Optional[str] = Field(None, description="ID of the entity (UUID as string)")
+
+    @validator('entity_id')
+    def validate_entity_id_format(cls, v):
+        """Validate that entity_id is a valid UUID string format"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for entity_id')
 
     @validator('number')
     def validate_phone_number(cls, v):
@@ -100,7 +121,7 @@ class ContactNumberUpdateSchema(UpdateBaseSchema):
 class ContactNumberResponseSchema(TimeStampedSchema):
     number: str
     entity_type: Optional[str]
-    entity_id: Optional[UUID]
+    entity_id: Optional[str]
     
     # Helper properties
     formatted_number: Optional[str] = Field(None, description="Formatted phone number")
@@ -116,9 +137,19 @@ class ContactNumberListResponseSchema(BaseModel):
 
 class EntityContactSummarySchema(BaseModel):
     entity_type: str
-    entity_id: UUID
+    entity_id: str = Field(..., description="UUID as string")
     total_contacts: int
     contact_numbers: List[ContactNumberResponseSchema]
+
+    @validator('entity_id')
+    def validate_entity_id_format(cls, v):
+        """Validate that entity_id is a valid UUID string format"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for entity_id')
 
 
 class ContactNumberBulkCreateSchema(BaseModel):

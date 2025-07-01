@@ -2,15 +2,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from uuid import UUID
 
 from .base_entity import BaseEntity
 
 
 @dataclass
 class LineItem(BaseEntity):
-    inventory_item_master_id: UUID
-    warehouse_id: UUID
+    inventory_item_master_id: str
+    warehouse_id: str
     status: str = "AVAILABLE"
     serial_number: Optional[str] = None
     quantity: int = 1

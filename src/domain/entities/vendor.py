@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from datetime import datetime
 
 from .base_entity import BaseEntity
@@ -13,7 +12,7 @@ class Vendor(BaseEntity):
         address: Optional[str] = None,
         remarks: Optional[str] = None,
         city: Optional[str] = None,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,

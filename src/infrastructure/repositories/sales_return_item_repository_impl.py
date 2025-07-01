@@ -4,7 +4,6 @@ This module provides the SQLAlchemy implementation of the ISalesReturnItemReposi
 """
 
 from typing import List, Optional
-from uuid import UUID
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -41,7 +40,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         
         return [self._model_to_entity(model) for model in models]
     
-    async def get_by_id(self, item_id: UUID) -> Optional[SalesReturnItem]:
+    async def get_by_id(self, item_id: str) -> Optional[SalesReturnItem]:
         """Retrieve a sales return item by its ID."""
         model = self.session.query(SalesReturnItemModel).filter(
             SalesReturnItemModel.id == item_id,
@@ -50,7 +49,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         
         return self._model_to_entity(model) if model else None
     
-    async def get_by_return(self, sales_return_id: UUID) -> List[SalesReturnItem]:
+    async def get_by_return(self, sales_return_id: str) -> List[SalesReturnItem]:
         """Get all items for a specific sales return."""
         models = self.session.query(SalesReturnItemModel).filter(
             SalesReturnItemModel.sales_return_id == sales_return_id,
@@ -59,7 +58,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         
         return [self._model_to_entity(model) for model in models]
     
-    async def get_by_sales_item(self, sales_item_id: UUID) -> List[SalesReturnItem]:
+    async def get_by_sales_item(self, sales_item_id: str) -> List[SalesReturnItem]:
         """Get all return items for a specific sales transaction item."""
         models = self.session.query(SalesReturnItemModel).filter(
             SalesReturnItemModel.sales_item_id == sales_item_id,
@@ -89,7 +88,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def delete(self, item_id: UUID) -> bool:
+    async def delete(self, item_id: str) -> bool:
         """Delete a sales return item."""
         model = self.session.query(SalesReturnItemModel).filter(
             SalesReturnItemModel.id == item_id
@@ -101,7 +100,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
             return True
         return False
     
-    async def delete_by_return(self, sales_return_id: UUID) -> int:
+    async def delete_by_return(self, sales_return_id: str) -> int:
         """Delete all items for a specific sales return."""
         result = self.session.query(SalesReturnItemModel).filter(
             SalesReturnItemModel.sales_return_id == sales_return_id,
@@ -111,7 +110,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         self.session.commit()
         return result
     
-    async def get_total_returned_quantity(self, sales_item_id: UUID) -> int:
+    async def get_total_returned_quantity(self, sales_item_id: str) -> int:
         """Get the total quantity returned for a sales transaction item."""
         result = self.session.query(
             func.sum(SalesReturnItemModel.quantity)
@@ -136,7 +135,7 @@ class SQLAlchemySalesReturnItemRepository(ISalesReturnItemRepository):
         
         return self._model_to_entity(model) if model else None
     
-    async def get_resellable_items(self, warehouse_id: Optional[UUID] = None) -> List[SalesReturnItem]:
+    async def get_resellable_items(self, warehouse_id: Optional[str] = None) -> List[SalesReturnItem]:
         """Get all return items that are in resellable condition."""
         resellable_conditions = ['new', 'unopened', 'like new', 'excellent', 'good']
         

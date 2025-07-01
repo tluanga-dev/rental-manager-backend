@@ -4,7 +4,7 @@ This module defines the use case for confirming a draft sales order.
 """
 
 from typing import Optional
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.sales import SalesTransaction
@@ -32,7 +32,7 @@ class ConfirmSalesOrderUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         confirmed_by: Optional[str] = None
     ) -> SalesTransaction:
         """

@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 import re
 
 from pydantic import BaseModel, Field, field_validator

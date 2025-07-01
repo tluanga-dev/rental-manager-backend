@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from datetime import datetime
 
 from .base_entity import BaseEntity
@@ -12,7 +11,7 @@ class ItemPackaging(BaseEntity):
         label: str,
         unit: str,
         remarks: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
+        entity_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,

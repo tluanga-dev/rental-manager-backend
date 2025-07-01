@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.customer import Customer
 
@@ -11,7 +10,7 @@ class CustomerRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, customer_id: UUID) -> Optional[Customer]:
+    async def find_by_id(self, customer_id: str) -> Optional[Customer]:
         pass
 
     @abstractmethod
@@ -27,9 +26,9 @@ class CustomerRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, customer_id: UUID) -> bool:
+    async def delete(self, customer_id: str) -> bool:
         pass
 
     @abstractmethod
-    async def exists(self, customer_id: UUID) -> bool:
+    async def exists(self, customer_id: str) -> bool:
         pass

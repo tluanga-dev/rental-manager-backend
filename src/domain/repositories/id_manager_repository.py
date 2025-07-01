@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from ..entities.id_manager import IdManager
 
@@ -12,7 +11,7 @@ class IdManagerRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, manager_id: UUID) -> Optional[IdManager]:
+    async def get_by_id(self, manager_id: str) -> Optional[IdManager]:
         """Get ID manager by ID"""
         pass
 
@@ -37,7 +36,7 @@ class IdManagerRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, manager_id: UUID) -> bool:
+    async def delete(self, manager_id: str) -> bool:
         """Delete an ID manager (soft delete)"""
         pass
 

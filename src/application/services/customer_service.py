@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.customer import Customer
 from ...domain.entities.contact_number import ContactNumber
@@ -54,7 +53,7 @@ class CustomerService:
         
         return customer
 
-    async def get_customer(self, customer_id: UUID) -> Optional[Customer]:
+    async def get_customer(self, customer_id: str) -> Optional[Customer]:
         return await self.get_customer_use_case.execute(customer_id)
 
     async def get_customer_by_email(self, email: str) -> Optional[Customer]:
@@ -65,7 +64,7 @@ class CustomerService:
 
     async def update_customer(
         self,
-        customer_id: UUID,
+        customer_id: str,
         name: Optional[str] = None,
         email: Optional[str] = None,
         address: Optional[str] = None,
@@ -86,7 +85,7 @@ class CustomerService:
         
         return customer
 
-    async def delete_customer(self, customer_id: UUID) -> bool:
+    async def delete_customer(self, customer_id: str) -> bool:
         return await self.delete_customer_use_case.execute(customer_id)
 
     async def list_customers(self, skip: int = 0, limit: int = 100) -> List[Customer]:
@@ -95,18 +94,18 @@ class CustomerService:
     async def search_customers(self, query: str, search_fields: List[str] = None, limit: int = 10) -> List[Customer]:
         return await self.search_customers_use_case.execute(query, search_fields, limit)
 
-    async def get_customer_contact_numbers(self, customer_id: UUID) -> List[ContactNumber]:
+    async def get_customer_contact_numbers(self, customer_id: str) -> List[ContactNumber]:
         """Get all contact numbers for a customer."""
         return await self.contact_number_repository.find_by_entity("Customer", customer_id)
 
-    async def add_contact_numbers(self, customer_id: UUID, contact_numbers: List[str], replace_all: bool = False) -> List[ContactNumber]:
+    async def add_contact_numbers(self, customer_id: str, contact_numbers: List[str], replace_all: bool = False) -> List[ContactNumber]:
         """Add contact numbers to a customer."""
         if replace_all:
             return await self._replace_contact_numbers(customer_id, contact_numbers)
         else:
             return await self._add_contact_numbers(customer_id, contact_numbers)
 
-    async def remove_contact_number(self, customer_id: UUID, contact_number: str) -> bool:
+    async def remove_contact_number(self, customer_id: str, contact_number: str) -> bool:
         """Remove a specific contact number from a customer."""
         existing_contacts = await self.contact_number_repository.find_by_entity("Customer", customer_id)
         for contact in existing_contacts:
@@ -114,7 +113,7 @@ class CustomerService:
                 return await self.contact_number_repository.delete(contact.id)
         return False
 
-    async def _add_contact_numbers(self, customer_id: UUID, contact_numbers: List[str]) -> List[ContactNumber]:
+    async def _add_contact_numbers(self, customer_id: str, contact_numbers: List[str]) -> List[ContactNumber]:
         """Helper to add contact numbers to a customer."""
         added_contacts = []
         for number in contact_numbers:
@@ -132,7 +131,7 @@ class CustomerService:
                 continue
         return added_contacts
 
-    async def _replace_contact_numbers(self, customer_id: UUID, contact_numbers: List[str]) -> List[ContactNumber]:
+    async def _replace_contact_numbers(self, customer_id: str, contact_numbers: List[str]) -> List[ContactNumber]:
         """Helper to replace all contact numbers for a customer."""
         # First delete all existing contact numbers
         existing_contacts = await self.contact_number_repository.find_by_entity("Customer", customer_id)

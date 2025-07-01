@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 
 from ...domain.entities.item_category import ItemCategory, ItemSubCategory
 from ...domain.repositories.item_category_repository import ItemCategoryRepository, ItemSubCategoryRepository
@@ -38,7 +38,7 @@ class GetItemCategoryUseCase:
     def __init__(self, category_repository: ItemCategoryRepository) -> None:
         self.category_repository = category_repository
 
-    async def execute(self, category_id: UUID) -> Optional[ItemCategory]:
+    async def execute(self, category_id: str) -> Optional[ItemCategory]:
         return await self.category_repository.find_by_id(category_id)
 
 
@@ -64,7 +64,7 @@ class UpdateItemCategoryUseCase:
 
     async def execute(
         self,
-        category_id: UUID,
+        category_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
         description: Optional[str] = None,
@@ -99,7 +99,7 @@ class DeleteItemCategoryUseCase:
     def __init__(self, category_repository: ItemCategoryRepository) -> None:
         self.category_repository = category_repository
 
-    async def execute(self, category_id: UUID) -> bool:
+    async def execute(self, category_id: str) -> bool:
         # Check if category exists
         if not await self.category_repository.exists(category_id):
             return False
@@ -138,7 +138,7 @@ class CreateItemSubCategoryUseCase:
         self,
         name: str,
         abbreviation: str,
-        item_category_id: UUID,
+        item_category_id: str,
         description: Optional[str] = None,
         created_by: Optional[str] = None,
     ) -> ItemSubCategory:
@@ -169,7 +169,7 @@ class GetItemSubCategoryUseCase:
     def __init__(self, subcategory_repository: ItemSubCategoryRepository) -> None:
         self.subcategory_repository = subcategory_repository
 
-    async def execute(self, subcategory_id: UUID) -> Optional[ItemSubCategory]:
+    async def execute(self, subcategory_id: str) -> Optional[ItemSubCategory]:
         return await self.subcategory_repository.find_by_id(subcategory_id)
 
 
@@ -185,7 +185,7 @@ class GetItemSubCategoriesByCategoryUseCase:
     def __init__(self, subcategory_repository: ItemSubCategoryRepository) -> None:
         self.subcategory_repository = subcategory_repository
 
-    async def execute(self, category_id: UUID, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
+    async def execute(self, category_id: str, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
         return await self.subcategory_repository.find_by_category(category_id, skip, limit)
 
 
@@ -200,10 +200,10 @@ class UpdateItemSubCategoryUseCase:
 
     async def execute(
         self,
-        subcategory_id: UUID,
+        subcategory_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
-        item_category_id: Optional[UUID] = None,
+        item_category_id: Optional[str] = None,
         description: Optional[str] = None,
         is_active: Optional[bool] = None,
     ) -> ItemSubCategory:
@@ -250,7 +250,7 @@ class DeleteItemSubCategoryUseCase:
     def __init__(self, subcategory_repository: ItemSubCategoryRepository) -> None:
         self.subcategory_repository = subcategory_repository
 
-    async def execute(self, subcategory_id: UUID) -> bool:
+    async def execute(self, subcategory_id: str) -> bool:
         # Check if subcategory exists
         if not await self.subcategory_repository.exists(subcategory_id):
             return False
@@ -270,5 +270,5 @@ class SearchItemSubCategoriesUseCase:
     def __init__(self, subcategory_repository: ItemSubCategoryRepository) -> None:
         self.subcategory_repository = subcategory_repository
 
-    async def execute(self, query: str, category_id: Optional[UUID] = None, limit: int = 10) -> List[ItemSubCategory]:
+    async def execute(self, query: str, category_id: Optional[str] = None, limit: int = 10) -> List[ItemSubCategory]:
         return await self.subcategory_repository.search_subcategories(query, category_id, limit)

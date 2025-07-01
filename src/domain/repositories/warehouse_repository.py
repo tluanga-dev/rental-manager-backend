@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.warehouse import Warehouse
 
@@ -12,7 +11,7 @@ class WarehouseRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, warehouse_id: UUID) -> Optional[Warehouse]:
+    async def get_by_id(self, warehouse_id: str) -> Optional[Warehouse]:
         """Get warehouse by ID"""
         pass
 
@@ -32,7 +31,7 @@ class WarehouseRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, warehouse_id: UUID) -> bool:
+    async def delete(self, warehouse_id: str) -> bool:
         """Delete a warehouse (soft delete)"""
         pass
 

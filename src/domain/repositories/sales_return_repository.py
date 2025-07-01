@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.sales import SalesReturn
 
@@ -29,7 +28,7 @@ class ISalesReturnRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, return_id: UUID) -> Optional[SalesReturn]:
+    async def get_by_id(self, return_id: str) -> Optional[SalesReturn]:
         """
         Retrieve a sales return by its ID.
         
@@ -55,7 +54,7 @@ class ISalesReturnRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_transaction(self, sales_transaction_id: UUID) -> List[SalesReturn]:
+    async def get_by_transaction(self, sales_transaction_id: str) -> List[SalesReturn]:
         """
         Get all returns for a specific sales transaction.
         
@@ -81,7 +80,7 @@ class ISalesReturnRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, return_id: UUID) -> bool:
+    async def delete(self, return_id: str) -> bool:
         """
         Soft delete a sales return.
         
@@ -159,7 +158,7 @@ class ISalesReturnRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_total_refund_amount(self, sales_transaction_id: UUID) -> Decimal:
+    async def get_total_refund_amount(self, sales_transaction_id: str) -> Decimal:
         """
         Calculate the total refund amount for a sales transaction.
         
@@ -174,8 +173,8 @@ class ISalesReturnRepository(ABC):
     @abstractmethod
     async def approve(
         self,
-        return_id: UUID,
-        approved_by_id: UUID
+        return_id: str,
+        approved_by_id: str
     ) -> SalesReturn:
         """
         Approve a sales return.

@@ -5,7 +5,7 @@ This module defines the use case for processing product returns.
 
 from decimal import Decimal
 from typing import List, Dict, Any, Optional
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.sales import SalesReturn, SalesReturnItem
@@ -44,11 +44,11 @@ class ProcessSalesReturnUseCase:
     
     async def execute(
         self,
-        sales_transaction_id: UUID,
+        sales_transaction_id: str,
         reason: str,
         items: List[Dict[str, Any]],
         restocking_fee: Decimal = Decimal("0"),
-        approved_by_id: Optional[UUID] = None,
+        approved_by_id: Optional[str] = None,
         created_by: Optional[str] = None
     ) -> SalesReturn:
         """

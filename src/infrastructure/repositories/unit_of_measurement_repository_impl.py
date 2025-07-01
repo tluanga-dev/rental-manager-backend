@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_, or_, func
 
@@ -28,7 +27,7 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
         self.db_session.refresh(db_unit)
         return self._model_to_entity(db_unit)
 
-    async def get_by_id(self, unit_id: UUID) -> Optional[UnitOfMeasurement]:
+    async def get_by_id(self, unit_id: str) -> Optional[UnitOfMeasurement]:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.id == unit_id)
         result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()
@@ -74,7 +73,7 @@ class UnitOfMeasurementRepositoryImpl(UnitOfMeasurementRepository):
         self.db_session.refresh(db_unit)
         return self._model_to_entity(db_unit)
 
-    async def delete(self, unit_id: UUID) -> bool:
+    async def delete(self, unit_id: str) -> bool:
         stmt = select(UnitOfMeasurementModel).where(UnitOfMeasurementModel.id == unit_id)
         result = self.db_session.execute(stmt)
         db_unit = result.scalar_one_or_none()

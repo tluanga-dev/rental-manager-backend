@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional, List
-from uuid import UUID
 
 from pydantic import BaseModel, Field, validator, EmailStr
 from .base_schemas import TimeStampedSchema, CreateBaseSchema, UpdateBaseSchema

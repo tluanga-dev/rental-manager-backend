@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.item_category import ItemCategory, ItemSubCategory
 
@@ -12,7 +11,7 @@ class ItemCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, category_id: UUID) -> Optional[ItemCategory]:
+    async def find_by_id(self, category_id: str) -> Optional[ItemCategory]:
         """Find a category by its ID."""
         pass
 
@@ -42,22 +41,22 @@ class ItemCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, category_id: UUID) -> bool:
+    async def delete(self, category_id: str) -> bool:
         """Delete a category by ID."""
         pass
 
     @abstractmethod
-    async def exists(self, category_id: UUID) -> bool:
+    async def exists(self, category_id: str) -> bool:
         """Check if a category exists by ID."""
         pass
 
     @abstractmethod
-    async def exists_by_name(self, name: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_name(self, name: str, exclude_id: Optional[str] = None) -> bool:
         """Check if a category exists by name, optionally excluding a specific ID."""
         pass
 
     @abstractmethod
-    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[str] = None) -> bool:
         """Check if a category exists by abbreviation, optionally excluding a specific ID."""
         pass
 
@@ -69,12 +68,12 @@ class ItemSubCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_id(self, subcategory_id: UUID) -> Optional[ItemSubCategory]:
+    async def find_by_id(self, subcategory_id: str) -> Optional[ItemSubCategory]:
         """Find a subcategory by its ID."""
         pass
 
     @abstractmethod
-    async def find_by_name_and_category(self, name: str, category_id: UUID) -> Optional[ItemSubCategory]:
+    async def find_by_name_and_category(self, name: str, category_id: str) -> Optional[ItemSubCategory]:
         """Find a subcategory by name within a specific category."""
         pass
 
@@ -84,12 +83,12 @@ class ItemSubCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def find_by_category(self, category_id: UUID, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
+    async def find_by_category(self, category_id: str, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
         """Find all subcategories for a specific category."""
         pass
 
     @abstractmethod
-    async def search_subcategories(self, query: str, category_id: Optional[UUID] = None, limit: int = 10) -> List[ItemSubCategory]:
+    async def search_subcategories(self, query: str, category_id: Optional[str] = None, limit: int = 10) -> List[ItemSubCategory]:
         """Search subcategories by name or abbreviation, optionally within a category."""
         pass
 
@@ -104,21 +103,21 @@ class ItemSubCategoryRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, subcategory_id: UUID) -> bool:
+    async def delete(self, subcategory_id: str) -> bool:
         """Delete a subcategory by ID."""
         pass
 
     @abstractmethod
-    async def exists(self, subcategory_id: UUID) -> bool:
+    async def exists(self, subcategory_id: str) -> bool:
         """Check if a subcategory exists by ID."""
         pass
 
     @abstractmethod
-    async def exists_by_name_and_category(self, name: str, category_id: UUID, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_name_and_category(self, name: str, category_id: str, exclude_id: Optional[str] = None) -> bool:
         """Check if a subcategory exists by name within a category, optionally excluding a specific ID."""
         pass
 
     @abstractmethod
-    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[str] = None) -> bool:
         """Check if a subcategory exists by abbreviation, optionally excluding a specific ID."""
         pass

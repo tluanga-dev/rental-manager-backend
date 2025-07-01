@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -32,7 +31,7 @@ class SQLAlchemyVendorRepository(VendorRepository):
         self.session.refresh(vendor_model)
         return self._model_to_entity(vendor_model)
 
-    async def find_by_id(self, vendor_id: UUID) -> Optional[Vendor]:
+    async def find_by_id(self, vendor_id: str) -> Optional[Vendor]:
         vendor_model = self.session.query(VendorModel).filter(VendorModel.id == vendor_id).first()
         if vendor_model:
             return self._model_to_entity(vendor_model)
@@ -110,7 +109,7 @@ class SQLAlchemyVendorRepository(VendorRepository):
         self.session.refresh(vendor_model)
         return self._model_to_entity(vendor_model)
 
-    async def delete(self, vendor_id: UUID) -> bool:
+    async def delete(self, vendor_id: str) -> bool:
         # First, check if vendor exists and get associated contact numbers
         vendor_model = self.session.query(VendorModel).filter(VendorModel.id == vendor_id).first()
         if not vendor_model:
@@ -128,10 +127,10 @@ class SQLAlchemyVendorRepository(VendorRepository):
         self.session.commit()
         return True
 
-    async def exists(self, vendor_id: UUID) -> bool:
+    async def exists(self, vendor_id: str) -> bool:
         return self.session.query(VendorModel).filter(VendorModel.id == vendor_id).first() is not None
 
-    async def exists_by_email(self, email: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_email(self, email: str, exclude_id: Optional[str] = None) -> bool:
         if not email:
             return False
             

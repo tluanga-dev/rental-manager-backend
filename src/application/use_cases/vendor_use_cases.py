@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 
 from ...domain.entities.vendor import Vendor
 from ...domain.repositories.vendor_repository import VendorRepository
@@ -38,7 +38,7 @@ class GetVendorUseCase:
     def __init__(self, vendor_repository: VendorRepository) -> None:
         self.vendor_repository = vendor_repository
 
-    async def execute(self, vendor_id: UUID) -> Optional[Vendor]:
+    async def execute(self, vendor_id: str) -> Optional[Vendor]:
         return await self.vendor_repository.find_by_id(vendor_id)
 
 
@@ -64,7 +64,7 @@ class UpdateVendorUseCase:
 
     async def execute(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         name: Optional[str] = None,
         email: Optional[str] = None,
         address: Optional[str] = None,
@@ -101,7 +101,7 @@ class DeleteVendorUseCase:
     def __init__(self, vendor_repository: VendorRepository) -> None:
         self.vendor_repository = vendor_repository
 
-    async def execute(self, vendor_id: UUID) -> bool:
+    async def execute(self, vendor_id: str) -> bool:
         # Check if vendor exists
         if not await self.vendor_repository.exists(vendor_id):
             return False

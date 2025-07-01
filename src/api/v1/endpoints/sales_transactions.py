@@ -5,7 +5,6 @@ This module defines the FastAPI endpoints for sales transaction operations.
 
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -210,7 +209,7 @@ async def list_sales_transactions(
 
 @router.get("/{transaction_id}", response_model=SalesTransactionDetailSchema)
 async def get_sales_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
     """Get a specific sales transaction by ID."""
@@ -232,7 +231,7 @@ async def get_sales_transaction(
 
 @router.patch("/{transaction_id}", response_model=SalesTransactionResponseSchema)
 async def update_sales_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     update_data: SalesTransactionUpdateSchema,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
@@ -262,7 +261,7 @@ async def update_sales_transaction(
 
 @router.post("/{transaction_id}/confirm", response_model=SalesTransactionDetailSchema)
 async def confirm_sales_order(
-    transaction_id: UUID,
+    transaction_id: str,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):
     """Confirm a draft sales order."""
@@ -284,7 +283,7 @@ async def confirm_sales_order(
 
 @router.post("/{transaction_id}/payment", response_model=SalesTransactionResponseSchema)
 async def update_payment(
-    transaction_id: UUID,
+    transaction_id: str,
     payment_data: UpdatePaymentSchema,
     repositories: Dict[str, Any] = Depends(get_repositories)
 ):

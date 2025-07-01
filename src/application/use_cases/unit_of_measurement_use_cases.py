@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 
 from ...domain.entities.unit_of_measurement import UnitOfMeasurement
 from ..services.unit_of_measurement_service import UnitOfMeasurementService
@@ -24,7 +24,7 @@ class UnitOfMeasurementUseCases:
             created_by=created_by,
         )
 
-    async def get_unit_of_measurement(self, unit_id: UUID) -> Optional[UnitOfMeasurement]:
+    async def get_unit_of_measurement(self, unit_id: str) -> Optional[UnitOfMeasurement]:
         """Get unit of measurement by ID"""
         return await self.unit_service.get_unit_by_id(unit_id)
 
@@ -44,7 +44,7 @@ class UnitOfMeasurementUseCases:
 
     async def update_unit_of_measurement(
         self,
-        unit_id: UUID,
+        unit_id: str,
         name: Optional[str] = None,
         abbreviation: Optional[str] = None,
         description: Optional[str] = None,
@@ -57,11 +57,11 @@ class UnitOfMeasurementUseCases:
             description=description,
         )
 
-    async def deactivate_unit_of_measurement(self, unit_id: UUID) -> bool:
+    async def deactivate_unit_of_measurement(self, unit_id: str) -> bool:
         """Deactivate a unit of measurement (soft delete)"""
         return await self.unit_service.deactivate_unit(unit_id)
 
-    async def activate_unit_of_measurement(self, unit_id: UUID) -> bool:
+    async def activate_unit_of_measurement(self, unit_id: str) -> bool:
         """Activate a unit of measurement"""
         return await self.unit_service.activate_unit(unit_id)
 

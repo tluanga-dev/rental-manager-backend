@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -60,7 +59,7 @@ async def create_vendor(
 
 @router.get("/{vendor_id}", response_model=VendorResponseSchema)
 async def get_vendor(
-    vendor_id: UUID,
+    vendor_id: str,
     vendor_service: VendorService = Depends(get_vendor_service),
 ):
     vendor = await vendor_service.get_vendor(vendor_id)
@@ -72,7 +71,7 @@ async def get_vendor(
 
 @router.put("/{vendor_id}", response_model=VendorResponseSchema)
 async def update_vendor(
-    vendor_id: UUID,
+    vendor_id: str,
     vendor_data: VendorUpdateSchema,
     vendor_service: VendorService = Depends(get_vendor_service),
 ):
@@ -94,7 +93,7 @@ async def update_vendor(
 
 @router.delete("/{vendor_id}", status_code=204)
 async def delete_vendor(
-    vendor_id: UUID,
+    vendor_id: str,
     vendor_service: VendorService = Depends(get_vendor_service),
 ):
     deleted = await vendor_service.delete_vendor(vendor_id)

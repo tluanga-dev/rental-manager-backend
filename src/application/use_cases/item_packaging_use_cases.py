@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 
 from ...domain.entities.item_packaging import ItemPackaging
 from ..services.item_packaging_service import ItemPackagingService
@@ -26,7 +26,7 @@ class ItemPackagingUseCases:
             created_by=created_by,
         )
 
-    async def get_item_packaging(self, item_packaging_id: UUID) -> Optional[ItemPackaging]:
+    async def get_item_packaging(self, item_packaging_id: str) -> Optional[ItemPackaging]:
         """Get item packaging by ID"""
         return await self.item_packaging_service.get_item_packaging_by_id(item_packaging_id)
 
@@ -42,7 +42,7 @@ class ItemPackagingUseCases:
 
     async def update_item_packaging(
         self,
-        item_packaging_id: UUID,
+        item_packaging_id: str,
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
@@ -57,11 +57,11 @@ class ItemPackagingUseCases:
             remarks=remarks,
         )
 
-    async def deactivate_item_packaging(self, item_packaging_id: UUID) -> bool:
+    async def deactivate_item_packaging(self, item_packaging_id: str) -> bool:
         """Deactivate an item packaging (soft delete)"""
         return await self.item_packaging_service.deactivate_item_packaging(item_packaging_id)
 
-    async def activate_item_packaging(self, item_packaging_id: UUID) -> bool:
+    async def activate_item_packaging(self, item_packaging_id: str) -> bool:
         """Activate an item packaging"""
         return await self.item_packaging_service.activate_item_packaging(item_packaging_id)
 

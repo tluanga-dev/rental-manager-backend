@@ -1,5 +1,4 @@
 from sqlalchemy import Column, String, Text, Index, ForeignKey, UniqueConstraint, Integer, Boolean, Enum, DECIMAL, CheckConstraint, Date, DateTime, JSON
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -12,7 +11,7 @@ class ContactNumberModel(TimeStampedModel):
 
     number = Column(String(20), nullable=False, index=True)
     entity_type = Column(String(50), nullable=True, index=True)
-    entity_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    entity_id = Column(String(36), nullable=True, index=True)
 
     __table_args__ = (
         Index('ix_contact_numbers_entity', 'entity_type', 'entity_id'),
@@ -105,7 +104,7 @@ class ItemSubCategoryModel(TimeStampedModel):
     name = Column(String(255), nullable=False, index=True)
     abbreviation = Column(String(9), nullable=False, unique=True, index=True)
     description = Column(Text, nullable=True)
-    item_category_id = Column(UUID(as_uuid=True), ForeignKey("item_categories.id"), nullable=False)
+    item_category_id = Column(String(36), ForeignKey("item_categories.id"), nullable=False)
 
     # Relationship to parent category
     item_category = relationship("ItemCategoryModel", back_populates="subcategories")
@@ -168,9 +167,9 @@ class InventoryItemMasterModel(TimeStampedModel):
     sku = Column(String(255), nullable=False, unique=True, index=True)
     description = Column(Text, nullable=True)
     contents = Column(Text, nullable=True)
-    item_sub_category_id = Column(UUID(as_uuid=True), ForeignKey("item_subcategories.id"), nullable=False)
-    unit_of_measurement_id = Column(UUID(as_uuid=True), ForeignKey("unit_of_measurement.id"), nullable=False)
-    packaging_id = Column(UUID(as_uuid=True), ForeignKey("item_packaging.id"), nullable=True)
+    item_sub_category_id = Column(String(36), ForeignKey("item_subcategories.id"), nullable=False)
+    unit_of_measurement_id = Column(String(36), ForeignKey("unit_of_measurement.id"), nullable=False)
+    packaging_id = Column(String(36), ForeignKey("item_packaging.id"), nullable=True)
     tracking_type = Column(Enum(TrackingType), nullable=False)
     is_consumable = Column(Boolean, default=False, nullable=False)
     brand = Column(String(255), nullable=True)
@@ -204,8 +203,8 @@ class InventoryItemMasterModel(TimeStampedModel):
 class LineItemModel(TimeStampedModel):
     __tablename__ = "line_items"
 
-    inventory_item_master_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    inventory_item_master_id = Column(String(36), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(String(36), ForeignKey("warehouses.id"), nullable=False)
     status = Column(Enum(InventoryItemStatus), default=InventoryItemStatus.AVAILABLE, nullable=False)
     serial_number = Column(String(255), nullable=True, unique=True, index=True)
     quantity = Column(Integer, default=1, nullable=False)
@@ -236,14 +235,14 @@ class LineItemModel(TimeStampedModel):
 class InventoryItemStockMovementModel(TimeStampedModel):
     __tablename__ = "inventory_item_stock_movements"
 
-    inventory_item_id = Column(UUID(as_uuid=True), ForeignKey("line_items.id"), nullable=False)
+    inventory_item_id = Column(String(36), ForeignKey("line_items.id"), nullable=False)
     movement_type = Column(Enum(MovementType), nullable=False)
     inventory_transaction_id = Column(String(255), nullable=False, index=True)
     quantity = Column(Integer, nullable=False)
     quantity_on_hand_before = Column(Integer, nullable=False)
     quantity_on_hand_after = Column(Integer, nullable=False)
-    warehouse_from_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
-    warehouse_to_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    warehouse_from_id = Column(String(36), ForeignKey("warehouses.id"), nullable=True)
+    warehouse_to_id = Column(String(36), ForeignKey("warehouses.id"), nullable=True)
     notes = Column(Text, nullable=True)
 
     # Relationships
@@ -257,22 +256,14 @@ class InventoryItemStockMovementModel(TimeStampedModel):
     )
 
 
-class PurchaseOrderStatus(str, enum.Enum):
-    DRAFT = "DRAFT"
-    ORDERED = "ORDERED"
-    PARTIAL_RECEIVED = "PARTIAL_RECEIVED"
-    RECEIVED = "RECEIVED"
-    CANCELLED = "CANCELLED"
-
 
 class PurchaseOrderModel(TimeStampedModel):
     __tablename__ = "purchase_orders"
 
     order_number = Column(String(50), nullable=False, unique=True, index=True)
-    vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendors.id"), nullable=False)
+    vendor_id = Column(String(36), ForeignKey("vendors.id"), nullable=False)
     order_date = Column(Date, nullable=False)
     expected_delivery_date = Column(Date, nullable=True)
-    status = Column(Enum(PurchaseOrderStatus), default=PurchaseOrderStatus.DRAFT, nullable=False)
     total_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
     total_tax_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
     total_discount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
@@ -290,7 +281,6 @@ class PurchaseOrderModel(TimeStampedModel):
         CheckConstraint('total_tax_amount >= 0', name='check_positive_total_tax'),
         CheckConstraint('total_discount >= 0', name='check_positive_total_discount'),
         CheckConstraint('grand_total >= 0', name='check_positive_grand_total'),
-        Index('ix_purchase_orders_status', 'status'),
         Index('ix_purchase_orders_order_date', 'order_date'),
         Index('ix_purchase_orders_vendor', 'vendor_id'),
     )
@@ -299,9 +289,9 @@ class PurchaseOrderModel(TimeStampedModel):
 class PurchaseOrderLineItemModel(TimeStampedModel):
     __tablename__ = "purchase_order_line_items"
 
-    purchase_order_id = Column(UUID(as_uuid=True), ForeignKey("purchase_orders.id"), nullable=False)
-    inventory_item_master_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    purchase_order_id = Column(String(36), ForeignKey("purchase_orders.id"), nullable=False)
+    inventory_item_master_id = Column(String(36), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(String(36), ForeignKey("warehouses.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(12, 2), nullable=False)
     serial_number = Column(String(255), nullable=True, index=True)
@@ -311,14 +301,7 @@ class PurchaseOrderLineItemModel(TimeStampedModel):
     reference_number = Column(String(255), nullable=True)
     warranty_period_type = Column(Enum(WarrantyPeriodType), nullable=True)
     warranty_period = Column(Integer, nullable=True)
-    rental_rate = Column(DECIMAL(12, 2), default=0.0, nullable=False)
-    replacement_cost = Column(DECIMAL(12, 2), default=0.0, nullable=False)
-    late_fee_rate = Column(DECIMAL(10, 2), default=0.0, nullable=False)
-    sell_tax_rate = Column(Integer, default=0, nullable=False)
-    rent_tax_rate = Column(Integer, default=0, nullable=False)
-    rentable = Column(Boolean, default=True, nullable=False)
-    sellable = Column(Boolean, default=False, nullable=False)
-    selling_price = Column(DECIMAL(12, 2), default=0.0, nullable=False)
+
 
     # Relationships
     purchase_order = relationship("PurchaseOrderModel", back_populates="line_items")
@@ -330,9 +313,6 @@ class PurchaseOrderLineItemModel(TimeStampedModel):
         CheckConstraint('unit_price >= 0', name='check_non_negative_unit_price'),
         CheckConstraint('discount >= 0', name='check_non_negative_discount'),
         CheckConstraint('tax_amount >= 0', name='check_non_negative_tax'),
-        CheckConstraint('received_quantity >= 0', name='check_non_negative_received_qty'),
-        CheckConstraint('sell_tax_rate >= 0 AND sell_tax_rate <= 100', name='check_sell_tax_rate_range'),
-        CheckConstraint('rent_tax_rate >= 0 AND rent_tax_rate <= 100', name='check_rent_tax_rate_range'),
         Index('ix_purchase_order_line_items_serial', 'serial_number'),
         Index('ix_purchase_order_line_items_inventory', 'inventory_item_master_id'),
         Index('ix_purchase_order_line_items_warehouse', 'warehouse_id'),
@@ -373,7 +353,7 @@ class SalesTransactionModel(TimeStampedModel):
 
     transaction_id = Column(String(20), nullable=False, unique=True, index=True)
     invoice_number = Column(String(50), nullable=True, unique=True, index=True)
-    customer_id = Column(UUID(as_uuid=True), ForeignKey("customers.id"), nullable=False)
+    customer_id = Column(String(36), ForeignKey("customers.id"), nullable=False)
     order_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     delivery_date = Column(DateTime(timezone=True), nullable=True)
     status = Column(Enum(SalesStatus), default=SalesStatus.DRAFT, nullable=False)
@@ -390,7 +370,7 @@ class SalesTransactionModel(TimeStampedModel):
     billing_address = Column(Text, nullable=True)
     purchase_order_number = Column(String(50), nullable=True)
     # TODO: Add foreign key to user table when authentication is implemented
-    sales_person_id = Column(UUID(as_uuid=True), nullable=True)
+    sales_person_id = Column(String(36), nullable=True)
     notes = Column(Text, nullable=True)
     customer_notes = Column(Text, nullable=True)
 
@@ -417,9 +397,9 @@ class SalesTransactionModel(TimeStampedModel):
 class SalesTransactionItemModel(TimeStampedModel):
     __tablename__ = "sales_transaction_items"
 
-    transaction_id = Column(UUID(as_uuid=True), ForeignKey("sales_transactions.id"), nullable=False)
-    inventory_item_master_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=False)
+    transaction_id = Column(String(36), ForeignKey("sales_transactions.id"), nullable=False)
+    inventory_item_master_id = Column(String(36), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(String(36), ForeignKey("warehouses.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(10, 2), nullable=False)
     cost_price = Column(DECIMAL(10, 2), default=0.0, nullable=False)
@@ -456,11 +436,11 @@ class SalesReturnModel(TimeStampedModel):
     __tablename__ = "sales_returns"
 
     return_id = Column(String(20), nullable=False, unique=True, index=True)
-    sales_transaction_id = Column(UUID(as_uuid=True), ForeignKey("sales_transactions.id"), nullable=False)
+    sales_transaction_id = Column(String(36), ForeignKey("sales_transactions.id"), nullable=False)
     return_date = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     reason = Column(Text, nullable=False)
     # TODO: Add foreign key to user table when authentication is implemented
-    approved_by_id = Column(UUID(as_uuid=True), nullable=True)
+    approved_by_id = Column(String(36), nullable=True)
     refund_amount = Column(DECIMAL(10, 2), default=0.0, nullable=False)
     restocking_fee = Column(DECIMAL(10, 2), default=0.0, nullable=False)
 
@@ -480,8 +460,8 @@ class SalesReturnModel(TimeStampedModel):
 class SalesReturnItemModel(TimeStampedModel):
     __tablename__ = "sales_return_items"
 
-    sales_return_id = Column(UUID(as_uuid=True), ForeignKey("sales_returns.id"), nullable=False)
-    sales_item_id = Column(UUID(as_uuid=True), ForeignKey("sales_transaction_items.id"), nullable=False)
+    sales_return_id = Column(String(36), ForeignKey("sales_returns.id"), nullable=False)
+    sales_item_id = Column(String(36), ForeignKey("sales_transaction_items.id"), nullable=False)
     quantity = Column(Integer, nullable=False)
     condition = Column(String(50), nullable=False)
     serial_numbers = Column(JSON, default=list, nullable=False)
@@ -497,16 +477,6 @@ class SalesReturnItemModel(TimeStampedModel):
     )
 
 
-# Purchase Transaction Enums
-class PurchaseStatus(str, enum.Enum):
-    DRAFT = "DRAFT"
-    CONFIRMED = "CONFIRMED"
-    PROCESSING = "PROCESSING"
-    RECEIVED = "RECEIVED"
-    COMPLETED = "COMPLETED"
-    CANCELLED = "CANCELLED"
-
-
 # WarrantyPeriodType enum already exists, so we just reference it in string form
 
 
@@ -515,8 +485,7 @@ class PurchaseTransactionModel(TimeStampedModel):
 
     transaction_id = Column(String(255), nullable=False, unique=True, index=True)
     transaction_date = Column(Date, nullable=False, index=True)
-    vendor_id = Column(UUID(as_uuid=True), ForeignKey("vendors.id"), nullable=False)
-    status = Column(Enum(PurchaseStatus), default=PurchaseStatus.DRAFT, nullable=False)
+    vendor_id = Column(String(36), ForeignKey("vendors.id"), nullable=False)
     total_amount = Column(DECIMAL(12, 2), default=0.0, nullable=False)
     grand_total = Column(DECIMAL(12, 2), default=0.0, nullable=False)
     purchase_order_number = Column(String(255), nullable=True, index=True)
@@ -529,7 +498,6 @@ class PurchaseTransactionModel(TimeStampedModel):
     __table_args__ = (
         CheckConstraint('total_amount >= 0', name='check_positive_total_amount'),
         CheckConstraint('grand_total >= 0', name='check_positive_grand_total'),
-        Index('ix_purchase_transactions_status', 'status'),
         Index('ix_purchase_transactions_vendor', 'vendor_id'),
         Index('ix_purchase_transactions_date', 'transaction_date'),
         Index('ix_purchase_transactions_po_number', 'purchase_order_number'),
@@ -539,9 +507,9 @@ class PurchaseTransactionModel(TimeStampedModel):
 class PurchaseTransactionItemModel(TimeStampedModel):
     __tablename__ = "purchase_transaction_items"
 
-    transaction_id = Column(UUID(as_uuid=True), ForeignKey("purchase_transactions.id"), nullable=False)
-    inventory_item_id = Column(UUID(as_uuid=True), ForeignKey("inventory_item_masters.id"), nullable=False)
-    warehouse_id = Column(UUID(as_uuid=True), ForeignKey("warehouses.id"), nullable=True)
+    transaction_id = Column(String(36), ForeignKey("purchase_transactions.id"), nullable=False)
+    inventory_item_id = Column(String(36), ForeignKey("inventory_item_masters.id"), nullable=False)
+    warehouse_id = Column(String(36), ForeignKey("warehouses.id"), nullable=True)
     quantity = Column(Integer, nullable=False)
     unit_price = Column(DECIMAL(10, 2), nullable=False)
     discount = Column(DECIMAL(10, 2), default=0.0, nullable=False)

@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.unit_of_measurement import UnitOfMeasurement
 
@@ -12,7 +11,7 @@ class UnitOfMeasurementRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, unit_id: UUID) -> Optional[UnitOfMeasurement]:
+    async def get_by_id(self, unit_id: str) -> Optional[UnitOfMeasurement]:
         """Get unit of measurement by ID"""
         pass
 
@@ -37,7 +36,7 @@ class UnitOfMeasurementRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, unit_id: UUID) -> bool:
+    async def delete(self, unit_id: str) -> bool:
         """Delete a unit of measurement (soft delete)"""
         pass
 

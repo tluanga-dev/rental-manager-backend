@@ -1,6 +1,5 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from .base_entity import BaseEntity
 from ..value_objects.phone_number import PhoneNumber
@@ -11,8 +10,8 @@ class ContactNumber(BaseEntity):
         self,
         phone_number: PhoneNumber,
         entity_type: str,
-        entity_id: UUID,
-        contact_id: Optional[UUID] = None,
+        entity_id: str,
+        contact_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
@@ -38,14 +37,14 @@ class ContactNumber(BaseEntity):
         return self._entity_type
 
     @property
-    def entity_id(self) -> UUID:
+    def entity_id(self) -> str:
         return self._entity_id
 
     def update_phone_number(self, phone_number: PhoneNumber) -> None:
         self._phone_number = phone_number
         self._touch_updated_at()
 
-    def update_entity_reference(self, entity_type: str, entity_id: UUID) -> None:
+    def update_entity_reference(self, entity_type: str, entity_id: str) -> None:
         self._entity_type = self._validate_entity_type(entity_type)
         self._entity_id = entity_id
         self._touch_updated_at()

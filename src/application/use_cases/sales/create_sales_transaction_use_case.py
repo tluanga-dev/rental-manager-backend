@@ -6,7 +6,7 @@ This module defines the use case for creating a new sales transaction.
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Dict, Any, Optional, Tuple
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.sales import SalesTransaction, SalesTransactionItem
@@ -48,7 +48,7 @@ class CreateSalesTransactionUseCase:
     
     async def execute(
         self,
-        customer_id: UUID,
+        customer_id: str,
         items: List[Dict[str, Any]],
         order_date: Optional[datetime] = None,
         delivery_date: Optional[datetime] = None,
@@ -57,7 +57,7 @@ class CreateSalesTransactionUseCase:
         shipping_address: Optional[str] = None,
         billing_address: Optional[str] = None,
         purchase_order_number: Optional[str] = None,
-        sales_person_id: Optional[UUID] = None,
+        sales_person_id: Optional[str] = None,
         notes: Optional[str] = None,
         customer_notes: Optional[str] = None,
         created_by: Optional[str] = None
@@ -222,7 +222,7 @@ class CreateSalesTransactionUseCase:
     
     async def _check_credit_limit(
         self,
-        customer_id: UUID,
+        customer_id: str,
         items: List[Dict[str, Any]],
         shipping_amount: Decimal
     ) -> None:

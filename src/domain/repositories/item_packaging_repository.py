@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.item_packaging import ItemPackaging
 
@@ -12,7 +11,7 @@ class ItemPackagingRepository(ABC):
         pass
 
     @abstractmethod
-    async def get_by_id(self, item_packaging_id: UUID) -> Optional[ItemPackaging]:
+    async def get_by_id(self, item_packaging_id: str) -> Optional[ItemPackaging]:
         """Get item packaging by ID"""
         pass
 
@@ -32,7 +31,7 @@ class ItemPackagingRepository(ABC):
         pass
 
     @abstractmethod
-    async def delete(self, item_packaging_id: UUID) -> bool:
+    async def delete(self, item_packaging_id: str) -> bool:
         """Delete an item packaging (soft delete)"""
         pass
 

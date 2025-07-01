@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -86,7 +85,7 @@ async def create_category(
 
 @router.get("/{category_id}", response_model=ItemCategoryResponseSchema)
 async def get_category(
-    category_id: UUID,
+    category_id: str,
     category_service: ItemCategoryService = Depends(get_category_service),
 ):
     category = await category_service.get_category(category_id)
@@ -98,7 +97,7 @@ async def get_category(
 
 @router.put("/{category_id}", response_model=ItemCategoryResponseSchema)
 async def update_category(
-    category_id: UUID,
+    category_id: str,
     category_data: ItemCategoryUpdateSchema,
     category_service: ItemCategoryService = Depends(get_category_service),
 ):
@@ -118,7 +117,7 @@ async def update_category(
 
 @router.delete("/{category_id}", status_code=204)
 async def delete_category(
-    category_id: UUID,
+    category_id: str,
     category_service: ItemCategoryService = Depends(get_category_service),
 ):
     deleted = await category_service.delete_category(category_id)
@@ -266,7 +265,7 @@ async def create_subcategory(
 
 @router.get("/subcategories/{subcategory_id}", response_model=ItemSubCategoryResponseSchema)
 async def get_subcategory(
-    subcategory_id: UUID,
+    subcategory_id: str,
     subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
 ):
     subcategory = await subcategory_service.get_subcategory(subcategory_id)
@@ -278,7 +277,7 @@ async def get_subcategory(
 
 @router.put("/subcategories/{subcategory_id}", response_model=ItemSubCategoryResponseSchema)
 async def update_subcategory(
-    subcategory_id: UUID,
+    subcategory_id: str,
     subcategory_data: ItemSubCategoryUpdateSchema,
     subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
 ):
@@ -299,7 +298,7 @@ async def update_subcategory(
 
 @router.delete("/subcategories/{subcategory_id}", status_code=204)
 async def delete_subcategory(
-    subcategory_id: UUID,
+    subcategory_id: str,
     subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
 ):
     deleted = await subcategory_service.delete_subcategory(subcategory_id)
@@ -327,7 +326,7 @@ async def list_subcategories(
 
 @router.get("/{category_id}/subcategories/", response_model=List[ItemSubCategoryResponseSchema])
 async def get_subcategories_by_category(
-    category_id: UUID,
+    category_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
@@ -339,7 +338,7 @@ async def get_subcategories_by_category(
 @router.get("/subcategories/search/", response_model=List[ItemSubCategoryResponseSchema])
 async def search_subcategories(
     query: str = Query(..., min_length=1, description="Search query"),
-    category_id: Optional[UUID] = Query(None, description="Filter by category ID"),
+    category_id: Optional[str] = Query(None, description="Filter by category ID"),
     limit: int = Query(10, ge=1, le=100, description="Maximum number of results"),
     subcategory_service: ItemSubCategoryService = Depends(get_subcategory_service),
 ):

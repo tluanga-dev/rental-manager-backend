@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.item_packaging import ItemPackaging
 from ...domain.repositories.item_packaging_repository import ItemPackagingRepository
@@ -31,7 +30,7 @@ class ItemPackagingService:
         )
         return await self.item_packaging_repository.create(item_packaging)
 
-    async def get_item_packaging_by_id(self, item_packaging_id: UUID) -> Optional[ItemPackaging]:
+    async def get_item_packaging_by_id(self, item_packaging_id: str) -> Optional[ItemPackaging]:
         return await self.item_packaging_repository.get_by_id(item_packaging_id)
 
     async def get_item_packaging_by_label(self, label: str) -> Optional[ItemPackaging]:
@@ -44,7 +43,7 @@ class ItemPackagingService:
 
     async def update_item_packaging(
         self,
-        item_packaging_id: UUID,
+        item_packaging_id: str,
         name: Optional[str] = None,
         label: Optional[str] = None,
         unit: Optional[str] = None,
@@ -71,7 +70,7 @@ class ItemPackagingService:
 
         return await self.item_packaging_repository.update(item_packaging)
 
-    async def deactivate_item_packaging(self, item_packaging_id: UUID) -> bool:
+    async def deactivate_item_packaging(self, item_packaging_id: str) -> bool:
         item_packaging = await self.item_packaging_repository.get_by_id(item_packaging_id)
         if not item_packaging:
             raise ValueError(f"Item packaging with id {item_packaging_id} not found")
@@ -80,7 +79,7 @@ class ItemPackagingService:
         await self.item_packaging_repository.update(item_packaging)
         return True
 
-    async def activate_item_packaging(self, item_packaging_id: UUID) -> bool:
+    async def activate_item_packaging(self, item_packaging_id: str) -> bool:
         item_packaging = await self.item_packaging_repository.get_by_id(item_packaging_id)
         if not item_packaging:
             raise ValueError(f"Item packaging with id {item_packaging_id} not found")

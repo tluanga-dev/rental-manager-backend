@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
@@ -29,7 +28,7 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
         self.db_session.refresh(db_item_packaging)
         return self._model_to_entity(db_item_packaging)
 
-    async def get_by_id(self, item_packaging_id: UUID) -> Optional[ItemPackaging]:
+    async def get_by_id(self, item_packaging_id: str) -> Optional[ItemPackaging]:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.id == item_packaging_id)
         result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()
@@ -70,7 +69,7 @@ class ItemPackagingRepositoryImpl(ItemPackagingRepository):
         self.db_session.refresh(db_item_packaging)
         return self._model_to_entity(db_item_packaging)
 
-    async def delete(self, item_packaging_id: UUID) -> bool:
+    async def delete(self, item_packaging_id: str) -> bool:
         stmt = select(ItemPackagingModel).where(ItemPackagingModel.id == item_packaging_id)
         result = self.db_session.execute(stmt)
         db_item_packaging = result.scalar_one_or_none()

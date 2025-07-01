@@ -6,7 +6,6 @@ This service will need to be properly implemented when the inventory module is c
 
 from decimal import Decimal
 from typing import List, Dict, Any
-from uuid import UUID
 
 
 class InventoryStockMovementService:
@@ -21,7 +20,7 @@ class InventoryStockMovementService:
         """Initialize the service."""
         self.session = session
     
-    async def check_availability(self, inventory_item_id: UUID, warehouse_id: UUID, 
+    async def check_availability(self, inventory_item_id: str, warehouse_id: str, 
                                quantity: int) -> bool:
         """
         Check if sufficient stock is available.
@@ -38,9 +37,9 @@ class InventoryStockMovementService:
         # Real implementation would check actual stock levels
         return True
     
-    async def reserve_stock(self, inventory_item_id: UUID, warehouse_id: UUID, 
+    async def reserve_stock(self, inventory_item_id: str, warehouse_id: str, 
                           quantity: int, reference_type: str = "sales_order",
-                          reference_id: UUID = None) -> bool:
+                          reference_id: str = None) -> bool:
         """
         Reserve stock for a sales order.
         
@@ -58,9 +57,9 @@ class InventoryStockMovementService:
         # Real implementation would create stock reservations
         return True
     
-    async def release_stock(self, inventory_item_id: UUID, warehouse_id: UUID,
+    async def release_stock(self, inventory_item_id: str, warehouse_id: str,
                           quantity: int, reference_type: str = "sales_order",
-                          reference_id: UUID = None) -> bool:
+                          reference_id: str = None) -> bool:
         """
         Release reserved stock.
         
@@ -77,9 +76,9 @@ class InventoryStockMovementService:
         # For testing purposes, always return True
         return True
     
-    async def confirm_sale(self, inventory_item_id: UUID, warehouse_id: UUID,
+    async def confirm_sale(self, inventory_item_id: str, warehouse_id: str,
                          quantity: int, serial_numbers: List[str] = None,
-                         reference_id: UUID = None) -> bool:
+                         reference_id: str = None) -> bool:
         """
         Confirm a sale and update stock levels.
         
@@ -96,10 +95,10 @@ class InventoryStockMovementService:
         # For testing purposes, always return True
         return True
     
-    async def process_return(self, inventory_item_id: UUID, warehouse_id: UUID,
+    async def process_return(self, inventory_item_id: str, warehouse_id: str,
                            quantity: int, condition: str = "GOOD",
                            serial_numbers: List[str] = None,
-                           reference_id: UUID = None) -> bool:
+                           reference_id: str = None) -> bool:
         """
         Process a return and update stock levels.
         
@@ -117,8 +116,8 @@ class InventoryStockMovementService:
         # For testing purposes, always return True
         return True
     
-    async def get_available_quantity(self, inventory_item_id: UUID, 
-                                   warehouse_id: UUID) -> int:
+    async def get_available_quantity(self, inventory_item_id: str, 
+                                   warehouse_id: str) -> int:
         """
         Get available quantity for an item in a warehouse.
         
@@ -132,8 +131,8 @@ class InventoryStockMovementService:
         # For testing purposes, return a high number
         return 1000
     
-    async def get_available_stock(self, inventory_item_id: UUID, 
-                                warehouse_id: UUID) -> int:
+    async def get_available_stock(self, inventory_item_id: str, 
+                                warehouse_id: str) -> int:
         """
         Get available stock for an item in a warehouse.
         
@@ -147,8 +146,8 @@ class InventoryStockMovementService:
         # For testing purposes, return a high number
         return 1000
     
-    async def get_reserved_quantity(self, inventory_item_id: UUID,
-                                  warehouse_id: UUID) -> int:
+    async def get_reserved_quantity(self, inventory_item_id: str,
+                                  warehouse_id: str) -> int:
         """
         Get reserved quantity for an item in a warehouse.
         

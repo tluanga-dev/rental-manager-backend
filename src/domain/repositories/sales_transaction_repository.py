@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.sales import SalesTransaction
 from src.domain.value_objects.sales import SalesStatus, PaymentStatus
@@ -30,7 +29,7 @@ class ISalesTransactionRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, transaction_id: UUID) -> Optional[SalesTransaction]:
+    async def get_by_id(self, transaction_id: str) -> Optional[SalesTransaction]:
         """
         Retrieve a sales transaction by its ID.
         
@@ -82,7 +81,7 @@ class ISalesTransactionRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, transaction_id: UUID) -> bool:
+    async def delete(self, transaction_id: str) -> bool:
         """
         Soft delete a sales transaction.
         
@@ -134,7 +133,7 @@ class ISalesTransactionRepository(ABC):
     @abstractmethod
     async def get_by_customer(
         self,
-        customer_id: UUID,
+        customer_id: str,
         skip: int = 0,
         limit: int = 100,
         include_cancelled: bool = False
@@ -180,7 +179,7 @@ class ISalesTransactionRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_customer_outstanding_balance(self, customer_id: UUID) -> Decimal:
+    async def get_customer_outstanding_balance(self, customer_id: str) -> Decimal:
         """
         Calculate the total outstanding balance for a customer.
         
@@ -233,7 +232,7 @@ class ISalesTransactionRepository(ABC):
     @abstractmethod
     async def update_payment_status(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         payment_status: PaymentStatus,
         amount_paid: Decimal
     ) -> SalesTransaction:
@@ -253,7 +252,7 @@ class ISalesTransactionRepository(ABC):
     @abstractmethod
     async def update_status(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         status: SalesStatus
     ) -> SalesTransaction:
         """

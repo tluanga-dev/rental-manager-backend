@@ -1,25 +1,25 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 
 class BaseEntity:
     def __init__(
         self,
-        entity_id: Optional[UUID] = None,
+        entity_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
         is_active: bool = True,
     ) -> None:
-        self._id = entity_id or uuid4()
+        self._id = entity_id or str(uuid4())
         self._created_at = created_at or datetime.utcnow()
         self._updated_at = updated_at or datetime.utcnow()
         self._created_by = created_by
         self._is_active = is_active
 
     @property
-    def id(self) -> UUID:
+    def id(self) -> str:
         return self._id
 
     @property

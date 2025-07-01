@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -38,7 +37,7 @@ class SQLAlchemyCustomerRepository(CustomerRepository):
         self.session.refresh(customer_model)
         return self._model_to_entity(customer_model)
 
-    async def find_by_id(self, customer_id: UUID) -> Optional[Customer]:
+    async def find_by_id(self, customer_id: str) -> Optional[Customer]:
         customer_model = self.session.query(CustomerModel).filter(CustomerModel.id == customer_id).first()
         if customer_model:
             return self._model_to_entity(customer_model)
@@ -77,7 +76,7 @@ class SQLAlchemyCustomerRepository(CustomerRepository):
         self.session.refresh(customer_model)
         return self._model_to_entity(customer_model)
 
-    async def delete(self, customer_id: UUID) -> bool:
+    async def delete(self, customer_id: str) -> bool:
         customer_model = self.session.query(CustomerModel).filter(CustomerModel.id == customer_id).first()
         if customer_model:
             self.session.delete(customer_model)
@@ -85,7 +84,7 @@ class SQLAlchemyCustomerRepository(CustomerRepository):
             return True
         return False
 
-    async def exists(self, customer_id: UUID) -> bool:
+    async def exists(self, customer_id: str) -> bool:
         return self.session.query(CustomerModel).filter(CustomerModel.id == customer_id).first() is not None
 
     async def find_by_email(self, email: str) -> Optional[Customer]:
@@ -135,7 +134,7 @@ class SQLAlchemyCustomerRepository(CustomerRepository):
         customer_models = query.all()
         return [self._model_to_entity(model) for model in customer_models]
 
-    async def exists_by_email(self, email: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_email(self, email: str, exclude_id: Optional[str] = None) -> bool:
         if not email:
             return False
             

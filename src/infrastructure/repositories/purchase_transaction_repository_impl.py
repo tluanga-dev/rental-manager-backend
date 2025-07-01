@@ -6,17 +6,14 @@ This module provides the SQLAlchemy implementation of the IPurchaseTransactionRe
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session, joinedload
 
 from src.domain.entities.purchase_transaction import PurchaseTransaction
 from src.domain.repositories.purchase_transaction_repository import IPurchaseTransactionRepository
-from src.domain.value_objects.purchase.purchase_status import PurchaseStatus
 from src.infrastructure.database.models import (
-    PurchaseTransactionModel,
-    PurchaseStatus as DBPurchaseStatus
+    PurchaseTransactionModel
 )
 
 
@@ -35,7 +32,7 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def get_by_id(self, transaction_id: UUID) -> Optional[PurchaseTransaction]:
+    async def get_by_id(self, transaction_id: str) -> Optional[PurchaseTransaction]:
         """Retrieve a purchase transaction by its ID."""
         model = self.session.query(PurchaseTransactionModel).filter(
             PurchaseTransactionModel.id == transaction_id,
@@ -66,7 +63,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         model.transaction_id = purchase_transaction.transaction_id
         model.transaction_date = purchase_transaction.transaction_date
         model.vendor_id = purchase_transaction.vendor_id
-        model.status = self._map_status_to_db(purchase_transaction.status)
         model.total_amount = float(purchase_transaction.total_amount)
         model.grand_total = float(purchase_transaction.grand_total)
         model.purchase_order_number = purchase_transaction.purchase_order_number
@@ -77,7 +73,7 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def delete(self, transaction_id: UUID) -> bool:
+    async def delete(self, transaction_id: str) -> bool:
         """Soft delete a purchase transaction."""
         model = self.session.query(PurchaseTransactionModel).filter(
             PurchaseTransactionModel.id == transaction_id
@@ -108,15 +104,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
             if 'vendor_id' in filters and filters['vendor_id']:
                 query = query.filter(PurchaseTransactionModel.vendor_id == filters['vendor_id'])
             
-            if 'status' in filters and filters['status']:
-                if isinstance(filters['status'], list):
-                    status_values = [self._map_status_to_db(PurchaseStatus(s)) for s in filters['status']]
-                    query = query.filter(PurchaseTransactionModel.status.in_(status_values))
-                else:
-                    query = query.filter(
-                        PurchaseTransactionModel.status == self._map_status_to_db(PurchaseStatus(filters['status']))
-                    )
-            
             if 'date_from' in filters and filters['date_from']:
                 query = query.filter(PurchaseTransactionModel.transaction_date >= filters['date_from'])
             
@@ -132,13 +119,14 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         if sort_by:
             column = getattr(PurchaseTransactionModel, sort_by, None)
             if column:
-                query = query.order_by(column.desc() if sort_desc else column.asc())
+                if sort_desc:
+                    query = query.order_by(column.desc())
+                else:
+                    query = query.order_by(column)
         else:
             query = query.order_by(PurchaseTransactionModel.transaction_date.desc())
         
-        # Apply pagination
         query = query.offset(skip).limit(limit)
-        
         models = query.all()
         return [self._model_to_entity(model) for model in models]
     
@@ -148,31 +136,27 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
             PurchaseTransactionModel.is_active == True
         )
         
-        # Apply same filters as list method
+        # Apply filters
         if filters:
             if 'vendor_id' in filters and filters['vendor_id']:
                 query = query.filter(PurchaseTransactionModel.vendor_id == filters['vendor_id'])
-            
-            if 'status' in filters and filters['status']:
-                if isinstance(filters['status'], list):
-                    status_values = [self._map_status_to_db(PurchaseStatus(s)) for s in filters['status']]
-                    query = query.filter(PurchaseTransactionModel.status.in_(status_values))
-                else:
-                    query = query.filter(
-                        PurchaseTransactionModel.status == self._map_status_to_db(PurchaseStatus(filters['status']))
-                    )
             
             if 'date_from' in filters and filters['date_from']:
                 query = query.filter(PurchaseTransactionModel.transaction_date >= filters['date_from'])
             
             if 'date_to' in filters and filters['date_to']:
                 query = query.filter(PurchaseTransactionModel.transaction_date <= filters['date_to'])
+            
+            if 'purchase_order_number' in filters and filters['purchase_order_number']:
+                query = query.filter(
+                    PurchaseTransactionModel.purchase_order_number.ilike(f"%{filters['purchase_order_number']}%")
+                )
         
         return query.count()
     
     async def get_by_vendor(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         skip: int = 0,
         limit: int = 100,
         include_cancelled: bool = False
@@ -182,9 +166,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
             PurchaseTransactionModel.vendor_id == vendor_id,
             PurchaseTransactionModel.is_active == True
         )
-        
-        if not include_cancelled:
-            query = query.filter(PurchaseTransactionModel.status != DBPurchaseStatus.CANCELLED)
         
         query = query.order_by(PurchaseTransactionModel.transaction_date.desc())
         query = query.offset(skip).limit(limit)
@@ -204,24 +185,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         
         return self._model_to_entity(model) if model else None
     
-    async def get_pending_transactions(self) -> List[PurchaseTransaction]:
-        """Get all purchase transactions that are pending processing."""
-        models = self.session.query(PurchaseTransactionModel).filter(
-            PurchaseTransactionModel.status.in_([DBPurchaseStatus.DRAFT, DBPurchaseStatus.CONFIRMED]),
-            PurchaseTransactionModel.is_active == True
-        ).order_by(PurchaseTransactionModel.transaction_date.asc()).all()
-        
-        return [self._model_to_entity(model) for model in models]
-    
-    async def get_in_progress_transactions(self) -> List[PurchaseTransaction]:
-        """Get all purchase transactions currently in progress."""
-        models = self.session.query(PurchaseTransactionModel).filter(
-            PurchaseTransactionModel.status.in_([DBPurchaseStatus.PROCESSING, DBPurchaseStatus.RECEIVED]),
-            PurchaseTransactionModel.is_active == True
-        ).order_by(PurchaseTransactionModel.transaction_date.asc()).all()
-        
-        return [self._model_to_entity(model) for model in models]
-    
     async def get_purchase_summary(
         self,
         start_date: date,
@@ -232,68 +195,31 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         base_query = self.session.query(PurchaseTransactionModel).filter(
             PurchaseTransactionModel.transaction_date >= start_date,
             PurchaseTransactionModel.transaction_date <= end_date,
-            PurchaseTransactionModel.status.in_([
-                DBPurchaseStatus.CONFIRMED,
-                DBPurchaseStatus.PROCESSING,
-                DBPurchaseStatus.RECEIVED,
-                DBPurchaseStatus.COMPLETED
-            ]),
             PurchaseTransactionModel.is_active == True
         )
         
         summary = {
+            'period': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
+            },
+            'total_transactions': base_query.count(),
             'total_amount': 0.0,
-            'total_transactions': 0,
-            'average_transaction': 0.0,
-            'status_breakdown': {},
-            'daily_breakdown': []
+            'grand_total': 0.0,
+            'average_amount': 0.0,
         }
         
-        # Basic stats
-        result = base_query.with_entities(
-            func.sum(PurchaseTransactionModel.grand_total).label('total'),
-            func.count(PurchaseTransactionModel.id).label('count'),
-            func.avg(PurchaseTransactionModel.grand_total).label('average')
+        # Calculate totals
+        totals = base_query.with_entities(
+            func.sum(PurchaseTransactionModel.total_amount).label('total_amount'),
+            func.sum(PurchaseTransactionModel.grand_total).label('grand_total'),
+            func.avg(PurchaseTransactionModel.grand_total).label('avg_amount')
         ).first()
         
-        if result.total:
-            summary['total_amount'] = float(result.total)
-            summary['total_transactions'] = result.count
-            summary['average_transaction'] = float(result.average)
-        
-        # Status breakdown
-        status_breakdown = base_query.with_entities(
-            PurchaseTransactionModel.status,
-            func.count(PurchaseTransactionModel.id).label('count'),
-            func.sum(PurchaseTransactionModel.grand_total).label('total')
-        ).group_by(PurchaseTransactionModel.status).all()
-        
-        for row in status_breakdown:
-            summary['status_breakdown'][row.status.value] = {
-                'count': row.count,
-                'total': float(row.total) if row.total else 0.0
-            }
-        
-        # Daily breakdown if requested
-        if group_by == 'day' or not group_by:
-            daily_purchases = base_query.with_entities(
-                func.date(PurchaseTransactionModel.transaction_date).label('date'),
-                func.sum(PurchaseTransactionModel.grand_total).label('total'),
-                func.count(PurchaseTransactionModel.id).label('transactions')
-            ).group_by(
-                func.date(PurchaseTransactionModel.transaction_date)
-            ).order_by(
-                func.date(PurchaseTransactionModel.transaction_date)
-            ).all()
-            
-            summary['daily_breakdown'] = [
-                {
-                    'date': str(row.date),
-                    'total': float(row.total),
-                    'transactions': row.transactions
-                }
-                for row in daily_purchases
-            ]
+        if totals:
+            summary['total_amount'] = float(totals.total_amount) if totals.total_amount else 0.0
+            summary['grand_total'] = float(totals.grand_total) if totals.grand_total else 0.0
+            summary['average_amount'] = float(totals.avg_amount) if totals.avg_amount else 0.0
         
         return summary
     
@@ -320,38 +246,13 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         if filters:
             if 'vendor_id' in filters and filters['vendor_id']:
                 search_query = search_query.filter(PurchaseTransactionModel.vendor_id == filters['vendor_id'])
-            
-            if 'status' in filters and filters['status']:
-                search_query = search_query.filter(
-                    PurchaseTransactionModel.status == self._map_status_to_db(PurchaseStatus(filters['status']))
-                )
         
         models = search_query.limit(100).all()
         return [self._model_to_entity(model) for model in models]
     
-    async def update_status(
-        self,
-        transaction_id: UUID,
-        status: PurchaseStatus
-    ) -> PurchaseTransaction:
-        """Update the status of a purchase transaction."""
-        model = self.session.query(PurchaseTransactionModel).filter(
-            PurchaseTransactionModel.id == transaction_id
-        ).first()
-        
-        if not model:
-            raise ValueError(f"Purchase transaction with id {transaction_id} not found")
-        
-        model.status = self._map_status_to_db(status)
-        model.updated_at = datetime.now()
-        
-        self.session.commit()
-        self.session.refresh(model)
-        return self._model_to_entity(model)
-    
     async def update_totals(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         total_amount: Decimal,
         grand_total: Decimal
     ) -> PurchaseTransaction:
@@ -388,16 +289,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
         
         stats = {}
         
-        # Total counts by status
-        status_counts = total_query.with_entities(
-            PurchaseTransactionModel.status,
-            func.count(PurchaseTransactionModel.id).label('count')
-        ).group_by(PurchaseTransactionModel.status).all()
-        
-        stats['status_counts'] = {
-            row.status.value: row.count for row in status_counts
-        }
-        
         # Total amount
         total_amount = total_query.with_entities(
             func.sum(PurchaseTransactionModel.grand_total)
@@ -428,7 +319,6 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
             transaction_id=entity.transaction_id,
             transaction_date=entity.transaction_date,
             vendor_id=entity.vendor_id,
-            status=self._map_status_to_db(entity.status),
             total_amount=float(entity.total_amount),
             grand_total=float(entity.grand_total),
             purchase_order_number=entity.purchase_order_number,
@@ -445,25 +335,16 @@ class SQLAlchemyPurchaseTransactionRepository(IPurchaseTransactionRepository):
             return None
         
         return PurchaseTransaction(
-            id=model.id,
             transaction_id=model.transaction_id,
             transaction_date=model.transaction_date,
             vendor_id=model.vendor_id,
-            status=self._map_status_from_db(model.status),
             total_amount=Decimal(str(model.total_amount)),
             grand_total=Decimal(str(model.grand_total)),
             purchase_order_number=model.purchase_order_number,
             remarks=model.remarks,
+            entity_id=model.id,
             created_at=model.created_at,
             updated_at=model.updated_at,
             created_by=model.created_by,
             is_active=model.is_active
         )
-    
-    def _map_status_to_db(self, status: PurchaseStatus) -> DBPurchaseStatus:
-        """Map domain status to database status."""
-        return DBPurchaseStatus[status.value]
-    
-    def _map_status_from_db(self, status: DBPurchaseStatus) -> PurchaseStatus:
-        """Map database status to domain status."""
-        return PurchaseStatus[status.value]

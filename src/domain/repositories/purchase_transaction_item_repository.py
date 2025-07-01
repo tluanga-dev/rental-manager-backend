@@ -6,7 +6,6 @@ This module defines the abstract interface for the PurchaseTransactionItem repos
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.purchase_transaction_item import PurchaseTransactionItem
 
@@ -41,7 +40,7 @@ class IPurchaseTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, item_id: UUID) -> Optional[PurchaseTransactionItem]:
+    async def get_by_id(self, item_id: str) -> Optional[PurchaseTransactionItem]:
         """
         Retrieve a purchase transaction item by its ID.
         
@@ -56,7 +55,7 @@ class IPurchaseTransactionItemRepository(ABC):
     @abstractmethod
     async def get_by_transaction_id(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -87,7 +86,7 @@ class IPurchaseTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, item_id: UUID) -> bool:
+    async def delete(self, item_id: str) -> bool:
         """
         Soft delete a purchase transaction item.
         
@@ -100,7 +99,7 @@ class IPurchaseTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def count_by_transaction_id(self, transaction_id: UUID) -> int:
+    async def count_by_transaction_id(self, transaction_id: str) -> int:
         """
         Count items for a specific purchase transaction.
         
@@ -115,7 +114,7 @@ class IPurchaseTransactionItemRepository(ABC):
     @abstractmethod
     async def get_by_inventory_item_id(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -135,7 +134,7 @@ class IPurchaseTransactionItemRepository(ABC):
     @abstractmethod
     async def get_by_warehouse_id(
         self,
-        warehouse_id: UUID,
+        warehouse_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -192,7 +191,7 @@ class IPurchaseTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_transaction_item_summary(self, transaction_id: UUID) -> Dict[str, Any]:
+    async def get_transaction_item_summary(self, transaction_id: str) -> Dict[str, Any]:
         """
         Get summary statistics for all items in a transaction.
         
@@ -207,7 +206,7 @@ class IPurchaseTransactionItemRepository(ABC):
     @abstractmethod
     async def update_pricing(
         self,
-        item_id: UUID,
+        item_id: str,
         unit_price: Optional[Decimal] = None,
         discount: Optional[Decimal] = None,
         tax_amount: Optional[Decimal] = None

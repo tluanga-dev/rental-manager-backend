@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -29,7 +28,7 @@ class SQLAlchemyIdManagerRepository(IdManagerRepository):
         await self.db_session.refresh(db_id_manager)
         return self._model_to_entity(db_id_manager)
 
-    async def get_by_id(self, manager_id: UUID) -> Optional[IdManager]:
+    async def get_by_id(self, manager_id: str) -> Optional[IdManager]:
         stmt = select(IdManagerModel).where(IdManagerModel.id == manager_id)
         result = await self.db_session.execute(stmt)
         db_id_manager = result.scalar_one_or_none()
@@ -92,7 +91,7 @@ class SQLAlchemyIdManagerRepository(IdManagerRepository):
         db_id_managers = result.scalars().all()
         return [self._model_to_entity(db_id_manager) for db_id_manager in db_id_managers]
 
-    async def delete(self, manager_id: UUID) -> bool:
+    async def delete(self, manager_id: str) -> bool:
         stmt = select(IdManagerModel).where(IdManagerModel.id == manager_id)
         result = await self.db_session.execute(stmt)
         db_id_manager = result.scalar_one_or_none()

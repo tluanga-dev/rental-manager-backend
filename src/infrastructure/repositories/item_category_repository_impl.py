@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -30,7 +29,7 @@ class SQLAlchemyItemCategoryRepository(ItemCategoryRepository):
         self.session.refresh(category_model)
         return self._model_to_entity(category_model)
 
-    async def find_by_id(self, category_id: UUID) -> Optional[ItemCategory]:
+    async def find_by_id(self, category_id: str) -> Optional[ItemCategory]:
         category_model = self.session.query(ItemCategoryModel).filter(ItemCategoryModel.id == category_id).first()
         if category_model:
             return self._model_to_entity(category_model)
@@ -79,7 +78,7 @@ class SQLAlchemyItemCategoryRepository(ItemCategoryRepository):
         self.session.refresh(category_model)
         return self._model_to_entity(category_model)
 
-    async def delete(self, category_id: UUID) -> bool:
+    async def delete(self, category_id: str) -> bool:
         category_model = self.session.query(ItemCategoryModel).filter(ItemCategoryModel.id == category_id).first()
         if category_model:
             # This will also delete subcategories due to cascade
@@ -88,10 +87,10 @@ class SQLAlchemyItemCategoryRepository(ItemCategoryRepository):
             return True
         return False
 
-    async def exists(self, category_id: UUID) -> bool:
+    async def exists(self, category_id: str) -> bool:
         return self.session.query(ItemCategoryModel).filter(ItemCategoryModel.id == category_id).first() is not None
 
-    async def exists_by_name(self, name: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_name(self, name: str, exclude_id: Optional[str] = None) -> bool:
         query = self.session.query(ItemCategoryModel).filter(
             ItemCategoryModel.name == name
         ).filter(ItemCategoryModel.is_active == True)
@@ -102,7 +101,7 @@ class SQLAlchemyItemCategoryRepository(ItemCategoryRepository):
         existing = query.first()
         return existing is not None
 
-    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[str] = None) -> bool:
         query = self.session.query(ItemCategoryModel).filter(
             ItemCategoryModel.abbreviation == abbreviation.upper()
         ).filter(ItemCategoryModel.is_active == True)
@@ -147,7 +146,7 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
         self.session.refresh(subcategory_model)
         return self._model_to_entity(subcategory_model)
 
-    async def find_by_id(self, subcategory_id: UUID) -> Optional[ItemSubCategory]:
+    async def find_by_id(self, subcategory_id: str) -> Optional[ItemSubCategory]:
         subcategory_model = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.id == subcategory_id
         ).first()
@@ -155,7 +154,7 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
             return self._model_to_entity(subcategory_model)
         return None
 
-    async def find_by_name_and_category(self, name: str, category_id: UUID) -> Optional[ItemSubCategory]:
+    async def find_by_name_and_category(self, name: str, category_id: str) -> Optional[ItemSubCategory]:
         subcategory_model = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.name == name,
             ItemSubCategoryModel.item_category_id == category_id
@@ -172,14 +171,14 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
             return self._model_to_entity(subcategory_model)
         return None
 
-    async def find_by_category(self, category_id: UUID, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
+    async def find_by_category(self, category_id: str, skip: int = 0, limit: int = 100) -> List[ItemSubCategory]:
         subcategory_models = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.item_category_id == category_id
         ).filter(ItemSubCategoryModel.is_active == True).order_by(ItemSubCategoryModel.name).offset(skip).limit(limit).all()
         
         return [self._model_to_entity(model) for model in subcategory_models]
 
-    async def search_subcategories(self, query: str, category_id: Optional[UUID] = None, limit: int = 10) -> List[ItemSubCategory]:
+    async def search_subcategories(self, query: str, category_id: Optional[str] = None, limit: int = 10) -> List[ItemSubCategory]:
         query_filter = (
             (ItemSubCategoryModel.name.ilike(f"%{query}%")) |
             (ItemSubCategoryModel.abbreviation.ilike(f"%{query}%"))
@@ -217,7 +216,7 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
         self.session.refresh(subcategory_model)
         return self._model_to_entity(subcategory_model)
 
-    async def delete(self, subcategory_id: UUID) -> bool:
+    async def delete(self, subcategory_id: str) -> bool:
         subcategory_model = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.id == subcategory_id
         ).first()
@@ -227,12 +226,12 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
             return True
         return False
 
-    async def exists(self, subcategory_id: UUID) -> bool:
+    async def exists(self, subcategory_id: str) -> bool:
         return self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.id == subcategory_id
         ).first() is not None
 
-    async def exists_by_name_and_category(self, name: str, category_id: UUID, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_name_and_category(self, name: str, category_id: str, exclude_id: Optional[str] = None) -> bool:
         query = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.name == name,
             ItemSubCategoryModel.item_category_id == category_id
@@ -244,7 +243,7 @@ class SQLAlchemyItemSubCategoryRepository(ItemSubCategoryRepository):
         existing = query.first()
         return existing is not None
 
-    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_abbreviation(self, abbreviation: str, exclude_id: Optional[str] = None) -> bool:
         query = self.session.query(ItemSubCategoryModel).filter(
             ItemSubCategoryModel.abbreviation == abbreviation.upper()
         ).filter(ItemSubCategoryModel.is_active == True)

@@ -6,7 +6,6 @@ This module provides the SQLAlchemy implementation of the ISalesReturnRepository
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session
@@ -31,7 +30,7 @@ class SQLAlchemySalesReturnRepository(ISalesReturnRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def get_by_id(self, return_id: UUID) -> Optional[SalesReturn]:
+    async def get_by_id(self, return_id: str) -> Optional[SalesReturn]:
         """Retrieve a sales return by its ID."""
         model = self.session.query(SalesReturnModel).filter(
             SalesReturnModel.id == return_id,
@@ -49,7 +48,7 @@ class SQLAlchemySalesReturnRepository(ISalesReturnRepository):
         
         return self._model_to_entity(model) if model else None
     
-    async def get_by_transaction(self, sales_transaction_id: UUID) -> List[SalesReturn]:
+    async def get_by_transaction(self, sales_transaction_id: str) -> List[SalesReturn]:
         """Get all returns for a specific sales transaction."""
         models = self.session.query(SalesReturnModel).filter(
             SalesReturnModel.sales_transaction_id == sales_transaction_id,
@@ -81,7 +80,7 @@ class SQLAlchemySalesReturnRepository(ISalesReturnRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def delete(self, return_id: UUID) -> bool:
+    async def delete(self, return_id: str) -> bool:
         """Soft delete a sales return."""
         model = self.session.query(SalesReturnModel).filter(
             SalesReturnModel.id == return_id
@@ -171,7 +170,7 @@ class SQLAlchemySalesReturnRepository(ISalesReturnRepository):
         
         return [self._model_to_entity(model) for model in models]
     
-    async def get_total_refund_amount(self, sales_transaction_id: UUID) -> Decimal:
+    async def get_total_refund_amount(self, sales_transaction_id: str) -> Decimal:
         """Calculate the total refund amount for a sales transaction."""
         result = self.session.query(
             func.sum(SalesReturnModel.refund_amount)
@@ -184,8 +183,8 @@ class SQLAlchemySalesReturnRepository(ISalesReturnRepository):
     
     async def approve(
         self,
-        return_id: UUID,
-        approved_by_id: UUID
+        return_id: str,
+        approved_by_id: str
     ) -> SalesReturn:
         """Approve a sales return."""
         model = self.session.query(SalesReturnModel).filter(

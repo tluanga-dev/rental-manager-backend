@@ -5,7 +5,6 @@ This module defines the abstract interface for the SalesReturnItem repository.
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from src.domain.entities.sales import SalesReturnItem
 
@@ -40,7 +39,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, item_id: UUID) -> Optional[SalesReturnItem]:
+    async def get_by_id(self, item_id: str) -> Optional[SalesReturnItem]:
         """
         Retrieve a sales return item by its ID.
         
@@ -53,7 +52,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_return(self, sales_return_id: UUID) -> List[SalesReturnItem]:
+    async def get_by_return(self, sales_return_id: str) -> List[SalesReturnItem]:
         """
         Get all items for a specific sales return.
         
@@ -66,7 +65,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_sales_item(self, sales_item_id: UUID) -> List[SalesReturnItem]:
+    async def get_by_sales_item(self, sales_item_id: str) -> List[SalesReturnItem]:
         """
         Get all return items for a specific sales transaction item.
         
@@ -92,7 +91,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, item_id: UUID) -> bool:
+    async def delete(self, item_id: str) -> bool:
         """
         Delete a sales return item.
         
@@ -105,7 +104,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete_by_return(self, sales_return_id: UUID) -> int:
+    async def delete_by_return(self, sales_return_id: str) -> int:
         """
         Delete all items for a specific sales return.
         
@@ -118,7 +117,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_total_returned_quantity(self, sales_item_id: UUID) -> int:
+    async def get_total_returned_quantity(self, sales_item_id: str) -> int:
         """
         Get the total quantity returned for a sales transaction item.
         
@@ -144,7 +143,7 @@ class ISalesReturnItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_resellable_items(self, warehouse_id: Optional[UUID] = None) -> List[SalesReturnItem]:
+    async def get_resellable_items(self, warehouse_id: Optional[str] = None) -> List[SalesReturnItem]:
         """
         Get all return items that are in resellable condition.
         

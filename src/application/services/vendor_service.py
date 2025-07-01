@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.vendor import Vendor
 from ...domain.repositories.vendor_repository import VendorRepository
@@ -40,7 +39,7 @@ class VendorService:
             name, email, address, remarks, city, created_by
         )
 
-    async def get_vendor(self, vendor_id: UUID) -> Optional[Vendor]:
+    async def get_vendor(self, vendor_id: str) -> Optional[Vendor]:
         return await self.get_vendor_use_case.execute(vendor_id)
 
     async def get_vendor_by_email(self, email: str) -> Optional[Vendor]:
@@ -51,7 +50,7 @@ class VendorService:
 
     async def update_vendor(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         name: Optional[str] = None,
         email: Optional[str] = None,
         address: Optional[str] = None,
@@ -63,7 +62,7 @@ class VendorService:
             vendor_id, name, email, address, remarks, city, is_active
         )
 
-    async def delete_vendor(self, vendor_id: UUID) -> bool:
+    async def delete_vendor(self, vendor_id: str) -> bool:
         return await self.delete_vendor_use_case.execute(vendor_id)
 
     async def list_vendors(self, skip: int = 0, limit: int = 100) -> List[Vendor]:

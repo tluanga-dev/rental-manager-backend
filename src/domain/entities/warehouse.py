@@ -1,5 +1,4 @@
 from typing import Optional
-from uuid import UUID
 from datetime import datetime
 
 from .base_entity import BaseEntity
@@ -11,7 +10,7 @@ class Warehouse(BaseEntity):
         name: str,
         label: str,
         remarks: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
+        entity_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
@@ -26,7 +25,7 @@ class Warehouse(BaseEntity):
         )
         self._name = self._validate_name(name)
         self._label = self._normalize_label(label)
-        self._remarks = remarks.strip() if remarks else None
+        self._remarks = remarks.strip() if remarks and remarks.strip() else None
 
     @property
     def name(self) -> str:
@@ -49,7 +48,7 @@ class Warehouse(BaseEntity):
         self._touch_updated_at()
 
     def update_remarks(self, remarks: Optional[str]) -> None:
-        self._remarks = remarks.strip() if remarks else None
+        self._remarks = remarks.strip() if remarks and remarks.strip() else None
         self._touch_updated_at()
 
     def _validate_name(self, name: str) -> str:

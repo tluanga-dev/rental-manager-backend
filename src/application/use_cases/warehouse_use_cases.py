@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 
 from ...domain.entities.warehouse import Warehouse
 from ..services.warehouse_service import WarehouseService
@@ -24,7 +24,7 @@ class WarehouseUseCases:
             created_by=created_by,
         )
 
-    async def get_warehouse(self, warehouse_id: UUID) -> Optional[Warehouse]:
+    async def get_warehouse(self, warehouse_id: str) -> Optional[Warehouse]:
         """Get warehouse by ID"""
         return await self.warehouse_service.get_warehouse_by_id(warehouse_id)
 
@@ -40,7 +40,7 @@ class WarehouseUseCases:
 
     async def update_warehouse(
         self,
-        warehouse_id: UUID,
+        warehouse_id: str,
         name: Optional[str] = None,
         label: Optional[str] = None,
         remarks: Optional[str] = None,
@@ -53,11 +53,11 @@ class WarehouseUseCases:
             remarks=remarks,
         )
 
-    async def deactivate_warehouse(self, warehouse_id: UUID) -> bool:
+    async def deactivate_warehouse(self, warehouse_id: str) -> bool:
         """Deactivate a warehouse (soft delete)"""
         return await self.warehouse_service.deactivate_warehouse(warehouse_id)
 
-    async def activate_warehouse(self, warehouse_id: UUID) -> bool:
+    async def activate_warehouse(self, warehouse_id: str) -> bool:
         """Activate a warehouse"""
         return await self.warehouse_service.activate_warehouse(warehouse_id)
 

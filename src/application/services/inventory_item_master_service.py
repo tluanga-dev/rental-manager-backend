@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 from decimal import Decimal
 
 from ...domain.entities.inventory_item_master import InventoryItemMaster
@@ -40,13 +39,13 @@ class InventoryItemMasterService:
         self,
         name: str,
         sku: str,
-        item_sub_category_id: UUID,
-        unit_of_measurement_id: UUID,
+        item_sub_category_id: str,
+        unit_of_measurement_id: str,
         tracking_type: str,
         is_consumable: bool = False,
         description: Optional[str] = None,
         contents: Optional[str] = None,
-        packaging_id: Optional[UUID] = None,
+        packaging_id: Optional[str] = None,
         brand: Optional[str] = None,
         manufacturer_part_number: Optional[str] = None,
         product_id: Optional[str] = None,
@@ -80,7 +79,7 @@ class InventoryItemMasterService:
             created_by=created_by
         )
 
-    async def get_inventory_item_master(self, inventory_item_id: UUID) -> Optional[InventoryItemMaster]:
+    async def get_inventory_item_master(self, inventory_item_id: str) -> Optional[InventoryItemMaster]:
         return await self.get_use_case.execute(inventory_item_id)
 
     async def get_inventory_item_master_by_sku(self, sku: str) -> Optional[InventoryItemMaster]:
@@ -88,14 +87,14 @@ class InventoryItemMasterService:
 
     async def update_inventory_item_master(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         name: Optional[str] = None,
         sku: Optional[str] = None,
         description: Optional[str] = None,
         contents: Optional[str] = None,
-        item_sub_category_id: Optional[UUID] = None,
-        unit_of_measurement_id: Optional[UUID] = None,
-        packaging_id: Optional[UUID] = None,
+        item_sub_category_id: Optional[str] = None,
+        unit_of_measurement_id: Optional[str] = None,
+        packaging_id: Optional[str] = None,
         tracking_type: Optional[str] = None,
         is_consumable: Optional[bool] = None,
         brand: Optional[str] = None,
@@ -132,13 +131,13 @@ class InventoryItemMasterService:
             is_active=is_active
         )
 
-    async def delete_inventory_item_master(self, inventory_item_id: UUID) -> bool:
+    async def delete_inventory_item_master(self, inventory_item_id: str) -> bool:
         return await self.delete_use_case.execute(inventory_item_id)
 
     async def list_inventory_item_masters(self, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
         return await self.list_use_case.execute(skip, limit)
 
-    async def list_by_subcategory(self, subcategory_id: UUID, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
+    async def list_by_subcategory(self, subcategory_id: str, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
         return await self.list_by_subcategory_use_case.execute(subcategory_id, skip, limit)
 
     async def list_by_tracking_type(self, tracking_type: str, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
@@ -150,12 +149,12 @@ class InventoryItemMasterService:
     async def search_inventory_item_masters(self, query: str, search_fields: List[str] = None, limit: int = 10) -> List[InventoryItemMaster]:
         return await self.search_use_case.execute(query, search_fields, limit)
 
-    async def update_quantity(self, inventory_item_id: UUID, new_quantity: int) -> bool:
+    async def update_quantity(self, inventory_item_id: str, new_quantity: int) -> bool:
         return await self.update_quantity_use_case.execute(inventory_item_id, new_quantity)
 
     async def update_dimensions(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         weight: Optional[Decimal] = None,
         length: Optional[Decimal] = None,
         width: Optional[Decimal] = None,
@@ -172,14 +171,14 @@ class InventoryItemMasterService:
     async def count_inventory_item_masters(self) -> int:
         return await self.repository.count()
 
-    async def count_by_subcategory(self, subcategory_id: UUID) -> int:
+    async def count_by_subcategory(self, subcategory_id: str) -> int:
         return await self.repository.count_by_subcategory(subcategory_id)
 
-    async def can_delete_inventory_item_master(self, inventory_item_id: UUID) -> bool:
+    async def can_delete_inventory_item_master(self, inventory_item_id: str) -> bool:
         """Check if an inventory item master can be deleted (no associated line items)"""
         return await self.repository.can_delete(inventory_item_id)
 
-    async def get_line_items_count(self, inventory_item_id: UUID) -> int:
+    async def get_line_items_count(self, inventory_item_id: str) -> int:
         """Get the count of line items associated with an inventory item master"""
         return await self.repository.get_line_items_count(inventory_item_id)
 

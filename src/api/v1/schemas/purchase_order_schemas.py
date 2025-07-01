@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 from datetime import date
 from decimal import Decimal
 from enum import Enum
@@ -24,8 +23,19 @@ class WarrantyPeriodType(str, Enum):
 
 
 class PurchaseOrderLineItemCreateSchema(BaseModel):
-    inventory_item_master_id: UUID = Field(..., description="Inventory item master ID")
-    warehouse_id: UUID = Field(..., description="Warehouse ID")
+    inventory_item_master_id: str = Field(..., description="Inventory item master ID (UUID as string)")
+    warehouse_id: str = Field(..., description="Warehouse ID (UUID as string)")
+
+    @field_validator("inventory_item_master_id", "warehouse_id")
+    @classmethod
+    def validate_uuid_fields(cls, v: str) -> str:
+        """Validate that UUID fields are valid UUID strings"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format')
     quantity: int = Field(..., gt=0, description="Quantity to order")
     unit_price: Decimal = Field(..., ge=0, description="Unit price")
     serial_number: Optional[str] = Field(None, max_length=255, description="Serial number for individual items")
@@ -52,7 +62,18 @@ class PurchaseOrderLineItemCreateSchema(BaseModel):
 
 
 class PurchaseOrderCreateSchema(CreateBaseSchema):
-    vendor_id: UUID = Field(..., description="Vendor ID")
+    vendor_id: str = Field(..., description="Vendor ID (UUID as string)")
+
+    @field_validator("vendor_id")
+    @classmethod
+    def validate_vendor_id(cls, v: str) -> str:
+        """Validate that vendor_id is a valid UUID string"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     order_date: date = Field(..., description="Order date")
     expected_delivery_date: Optional[date] = Field(None, description="Expected delivery date")
     reference_number: Optional[str] = Field(None, max_length=255, description="Reference number")
@@ -69,7 +90,20 @@ class PurchaseOrderCreateSchema(CreateBaseSchema):
 
 
 class PurchaseOrderUpdateSchema(UpdateBaseSchema):
-    vendor_id: Optional[UUID] = Field(None, description="Vendor ID")
+    vendor_id: Optional[str] = Field(None, description="Vendor ID (UUID as string)")
+
+    @field_validator("vendor_id")
+    @classmethod
+    def validate_vendor_id(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that vendor_id is a valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     order_date: Optional[date] = Field(None, description="Order date")
     expected_delivery_date: Optional[date] = Field(None, description="Expected delivery date")
     reference_number: Optional[str] = Field(None, max_length=255, description="Reference number")
@@ -78,7 +112,18 @@ class PurchaseOrderUpdateSchema(UpdateBaseSchema):
 
 
 class PurchaseOrderReceiveItemSchema(BaseModel):
-    line_item_id: UUID = Field(..., description="Line item ID")
+    line_item_id: str = Field(..., description="Line item ID (UUID as string)")
+
+    @field_validator("line_item_id")
+    @classmethod
+    def validate_line_item_id(cls, v: str) -> str:
+        """Validate that line_item_id is a valid UUID string"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for line_item_id')
     quantity: int = Field(..., gt=0, description="Quantity received")
 
 
@@ -87,10 +132,9 @@ class PurchaseOrderReceiveSchema(BaseModel):
 
 
 class PurchaseOrderLineItemResponseSchema(TimeStampedSchema):
-    id: UUID
-    purchase_order_id: UUID
-    inventory_item_master_id: UUID
-    warehouse_id: UUID
+    inventory_item_master_id: str
+    warehouse_id: str
+    purchase_order_id: str
     quantity: int
     unit_price: Decimal
     serial_number: Optional[str]
@@ -117,9 +161,8 @@ class PurchaseOrderLineItemResponseSchema(TimeStampedSchema):
 
 
 class PurchaseOrderResponseSchema(TimeStampedSchema):
-    id: UUID
     order_number: str
-    vendor_id: UUID
+    vendor_id: str
     order_date: date
     expected_delivery_date: Optional[date]
     status: PurchaseOrderStatus
@@ -145,7 +188,20 @@ class PurchaseOrderDetailResponseSchema(PurchaseOrderResponseSchema):
 class PurchaseOrderListQuerySchema(BaseModel):
     skip: int = Field(default=0, ge=0, description="Number of records to skip")
     limit: int = Field(default=100, ge=1, le=1000, description="Number of records to return")
-    vendor_id: Optional[UUID] = Field(None, description="Filter by vendor ID")
+    vendor_id: Optional[str] = Field(None, description="Filter by vendor ID (UUID as string)")
+
+    @field_validator("vendor_id")
+    @classmethod
+    def validate_vendor_id_filter(cls, v: Optional[str]) -> Optional[str]:
+        """Validate that vendor_id is a valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     status: Optional[PurchaseOrderStatus] = Field(None, description="Filter by status")
     start_date: Optional[date] = Field(None, description="Filter by start date")
     end_date: Optional[date] = Field(None, description="Filter by end date")
@@ -169,7 +225,7 @@ class PurchaseOrderSearchQuerySchema(BaseModel):
 
 class PurchaseOrderSummaryResponseSchema(BaseModel):
     order_number: str
-    vendor_id: UUID
+    vendor_id: str
     status: PurchaseOrderStatus
     order_date: date
     expected_delivery_date: Optional[date]

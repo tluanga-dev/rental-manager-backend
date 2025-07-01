@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import select, and_
 
@@ -28,7 +27,7 @@ class SQLAlchemyWarehouseRepository(WarehouseRepository):
         self.db_session.refresh(db_warehouse)
         return self._model_to_entity(db_warehouse)
 
-    async def get_by_id(self, warehouse_id: UUID) -> Optional[Warehouse]:
+    async def get_by_id(self, warehouse_id: str) -> Optional[Warehouse]:
         stmt = select(WarehouseModel).where(WarehouseModel.id == warehouse_id)
         result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()
@@ -68,7 +67,7 @@ class SQLAlchemyWarehouseRepository(WarehouseRepository):
         self.db_session.refresh(db_warehouse)
         return self._model_to_entity(db_warehouse)
 
-    async def delete(self, warehouse_id: UUID) -> bool:
+    async def delete(self, warehouse_id: str) -> bool:
         stmt = select(WarehouseModel).where(WarehouseModel.id == warehouse_id)
         result = self.db_session.execute(stmt)
         db_warehouse = result.scalar_one_or_none()

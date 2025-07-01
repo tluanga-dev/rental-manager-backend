@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from ...domain.entities.customer import Customer
 from ...domain.repositories.customer_repository import CustomerRepository
@@ -41,7 +40,7 @@ class GetCustomerUseCase:
     def __init__(self, customer_repository: CustomerRepository) -> None:
         self.customer_repository = customer_repository
 
-    async def execute(self, customer_id: UUID) -> Optional[Customer]:
+    async def execute(self, customer_id: str) -> Optional[Customer]:
         return await self.customer_repository.find_by_id(customer_id)
 
 
@@ -51,7 +50,7 @@ class UpdateCustomerUseCase:
 
     async def execute(
         self, 
-        customer_id: UUID, 
+        customer_id: str, 
         name: Optional[str] = None,
         email: Optional[str] = None,
         address: Optional[str] = None,
@@ -94,7 +93,7 @@ class DeleteCustomerUseCase:
     def __init__(self, customer_repository: CustomerRepository) -> None:
         self.customer_repository = customer_repository
 
-    async def execute(self, customer_id: UUID) -> bool:
+    async def execute(self, customer_id: str) -> bool:
         return await self.customer_repository.delete(customer_id)
 
 

@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -32,7 +31,7 @@ class SQLAlchemyContactNumberRepository(ContactNumberRepository):
         self.session.refresh(contact_model)
         return self._model_to_entity(contact_model)
 
-    async def find_by_id(self, contact_id: UUID) -> Optional[ContactNumber]:
+    async def find_by_id(self, contact_id: str) -> Optional[ContactNumber]:
         contact_model = self.session.query(ContactNumberModel).filter(
             ContactNumberModel.id == contact_id
         ).first()
@@ -51,7 +50,7 @@ class SQLAlchemyContactNumberRepository(ContactNumberRepository):
             return self._model_to_entity(contact_model)
         return None
 
-    async def find_by_entity(self, entity_type: str, entity_id: UUID) -> List[ContactNumber]:
+    async def find_by_entity(self, entity_type: str, entity_id: str) -> List[ContactNumber]:
         contact_models = self.session.query(ContactNumberModel).filter(
             and_(
                 ContactNumberModel.entity_type == entity_type,
@@ -70,7 +69,7 @@ class SQLAlchemyContactNumberRepository(ContactNumberRepository):
         ).limit(limit).order_by(ContactNumberModel.created_at.desc()).all()
         return [self._model_to_entity(model) for model in contact_models]
 
-    async def exists_for_entity(self, entity_type: str, entity_id: UUID, number: str) -> bool:
+    async def exists_for_entity(self, entity_type: str, entity_id: str, number: str) -> bool:
         existing = self.session.query(ContactNumberModel).filter(
             and_(
                 ContactNumberModel.entity_type == entity_type,
@@ -104,7 +103,7 @@ class SQLAlchemyContactNumberRepository(ContactNumberRepository):
         self.session.refresh(contact_model)
         return self._model_to_entity(contact_model)
 
-    async def delete(self, contact_id: UUID) -> bool:
+    async def delete(self, contact_id: str) -> bool:
         contact_model = self.session.query(ContactNumberModel).filter(
             ContactNumberModel.id == contact_id
         ).first()
@@ -115,12 +114,12 @@ class SQLAlchemyContactNumberRepository(ContactNumberRepository):
             return True
         return False
 
-    async def exists(self, contact_id: UUID) -> bool:
+    async def exists(self, contact_id: str) -> bool:
         return self.session.query(ContactNumberModel).filter(
             ContactNumberModel.id == contact_id
         ).first() is not None
 
-    async def get_entity_contact_summary(self, entity_type: str, entity_id: UUID) -> Dict[str, Any]:
+    async def get_entity_contact_summary(self, entity_type: str, entity_id: str) -> Dict[str, Any]:
         contacts = await self.find_by_entity(entity_type, entity_id)
         
         return {

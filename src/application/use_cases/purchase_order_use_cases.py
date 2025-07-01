@@ -1,5 +1,5 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
+
 from datetime import date
 from decimal import Decimal
 
@@ -29,7 +29,7 @@ class CreatePurchaseOrderUseCase(LoggingMixin):
 
     async def execute(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         order_date: date,
         items: List[Dict[str, Any]],
         expected_delivery_date: Optional[date] = None,
@@ -181,8 +181,8 @@ class UpdatePurchaseOrderUseCase(LoggingMixin):
 
     async def execute(
         self,
-        purchase_order_id: UUID,
-        vendor_id: Optional[UUID] = None,
+        purchase_order_id: str,
+        vendor_id: Optional[str] = None,
         order_date: Optional[date] = None,
         expected_delivery_date: Optional[date] = None,
         reference_number: Optional[str] = None,
@@ -231,8 +231,8 @@ class ReceivePurchaseOrderUseCase(LoggingMixin):
 
     async def execute(
         self,
-        purchase_order_id: UUID,
-        received_items: List[Dict[str, Any]],  # [{"line_item_id": UUID, "quantity": int}]
+        purchase_order_id: str,
+        received_items: List[Dict[str, Any]],  # [{"line_item_id": str, "quantity": int}]
     ) -> PurchaseOrder:
         # Get purchase order
         purchase_order = await self.purchase_order_repository.find_by_id(purchase_order_id)
@@ -327,7 +327,7 @@ class CancelPurchaseOrderUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 
-    async def execute(self, purchase_order_id: UUID) -> PurchaseOrder:
+    async def execute(self, purchase_order_id: str) -> PurchaseOrder:
         purchase_order = await self.purchase_order_repository.find_by_id(purchase_order_id)
         if not purchase_order:
             raise ValueError(f"Purchase order with ID {purchase_order_id} not found")
@@ -340,7 +340,7 @@ class GetPurchaseOrderUseCase(LoggingMixin):
     def __init__(self, purchase_order_repository: PurchaseOrderRepository) -> None:
         self.purchase_order_repository = purchase_order_repository
 
-    async def execute(self, purchase_order_id: UUID) -> Optional[PurchaseOrder]:
+    async def execute(self, purchase_order_id: str) -> Optional[PurchaseOrder]:
         return await self.purchase_order_repository.find_by_id(purchase_order_id)
 
 
@@ -353,7 +353,7 @@ class GetPurchaseOrderDetailsUseCase(LoggingMixin):
         self.purchase_order_repository = purchase_order_repository
         self.line_item_repository = line_item_repository
 
-    async def execute(self, purchase_order_id: UUID) -> Dict[str, Any]:
+    async def execute(self, purchase_order_id: str) -> Dict[str, Any]:
         purchase_order = await self.purchase_order_repository.find_by_id(purchase_order_id)
         if not purchase_order:
             raise ValueError(f"Purchase order with ID {purchase_order_id} not found")
@@ -377,7 +377,7 @@ class ListPurchaseOrdersUseCase(LoggingMixin):
         self,
         skip: int = 0,
         limit: int = 100,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         status: Optional[PurchaseOrderStatus] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,

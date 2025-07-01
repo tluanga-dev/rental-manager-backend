@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
@@ -138,7 +137,7 @@ async def get_inventory_item_stats(
 
 @router.get("/{item_id}", response_model=InventoryItemMasterResponseSchema)
 async def get_inventory_item(
-    item_id: UUID,
+    item_id: str,
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
 ):
     inventory_item = await service.get_inventory_item_master(item_id)
@@ -160,7 +159,7 @@ async def get_inventory_item_by_sku(
 
 @router.put("/{item_id}", response_model=InventoryItemMasterResponseSchema)
 async def update_inventory_item(
-    item_id: UUID,
+    item_id: str,
     item_data: InventoryItemMasterUpdateSchema,
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
 ):
@@ -194,7 +193,7 @@ async def update_inventory_item(
 
 @router.delete("/{item_id}", status_code=204)
 async def delete_inventory_item(
-    item_id: UUID,
+    item_id: str,
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
 ):
     # Check if item exists
@@ -267,7 +266,7 @@ def list_inventory_items(
 
 @router.get("/by-subcategory/{subcategory_id}", response_model=List[InventoryItemMasterResponseSchema])
 async def list_by_subcategory(
-    subcategory_id: UUID,
+    subcategory_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
@@ -313,7 +312,7 @@ async def search_inventory_items(
 
 @router.patch("/{item_id}/quantity", response_model=dict)
 async def update_quantity(
-    item_id: UUID,
+    item_id: str,
     quantity_data: InventoryItemMasterQuantityUpdateSchema,
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
 ):
@@ -325,7 +324,7 @@ async def update_quantity(
 
 @router.patch("/{item_id}/dimensions", response_model=InventoryItemMasterResponseSchema)
 async def update_dimensions(
-    item_id: UUID,
+    item_id: str,
     dimensions_data: InventoryItemMasterDimensionsUpdateSchema,
     service: InventoryItemMasterService = Depends(get_inventory_item_master_service),
 ):

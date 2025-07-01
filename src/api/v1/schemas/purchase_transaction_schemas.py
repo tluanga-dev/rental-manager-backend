@@ -6,7 +6,6 @@ This module defines Pydantic schemas for purchase transaction API requests and r
 from datetime import date
 from decimal import Decimal
 from typing import Optional, List, Dict, Any
-from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -16,10 +15,34 @@ from .base_schemas import CreateBaseSchema, UpdateBaseSchema, TimeStampedSchema
 class PurchaseTransactionItemCreateSchema(BaseModel):
     """Schema for creating a purchase transaction item."""
     
-    item_master_id: UUID = Field(..., description="Inventory item master ID")
+    item_master_id: str = Field(..., description="Inventory item master ID (UUID as string)")
+
+    @field_validator('item_master_id')
+    @classmethod
+    def validate_item_master_id(cls, v):
+        """Validate that item_master_id is a valid UUID string"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for item_master_id')
     quantity: int = Field(..., gt=0, description="Quantity purchased")
     unit_price: Decimal = Field(..., ge=0, description="Unit purchase price")
-    warehouse_id: Optional[UUID] = Field(None, description="Warehouse ID")
+    warehouse_id: Optional[str] = Field(None, description="Warehouse ID (UUID as string)")
+
+    @field_validator('warehouse_id')
+    @classmethod
+    def validate_warehouse_id(cls, v):
+        """Validate that warehouse_id is a valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for warehouse_id')
     serial_number: Optional[List[str]] = Field(
         default_factory=list,
         description="Serial numbers for individually tracked items"
@@ -95,10 +118,10 @@ class PurchaseTransactionItemUpdateSchema(BaseModel):
 class PurchaseTransactionItemResponseSchema(TimeStampedSchema):
     """Schema for purchase transaction item response."""
     
-    transaction_id: UUID
-    inventory_item_id: UUID
+    transaction_id: str
+    inventory_item_id: str
     inventory_item: Optional[Dict[str, Any]] = Field(None, description="Inventory item details")
-    warehouse_id: Optional[UUID]
+    warehouse_id: Optional[str]
     warehouse: Optional[Dict[str, Any]] = Field(None, description="Warehouse details")
     quantity: int
     unit_price: Decimal
@@ -115,7 +138,18 @@ class PurchaseTransactionCreateSchema(CreateBaseSchema):
     """Schema for creating a purchase transaction."""
     
     transaction_date: date = Field(..., description="Transaction date")
-    vendor_id: UUID = Field(..., description="Vendor ID")
+    vendor_id: str = Field(..., description="Vendor ID (UUID as string)")
+
+    @field_validator('vendor_id')
+    @classmethod
+    def validate_vendor_id(cls, v):
+        """Validate that vendor_id is a valid UUID string"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     transaction_id: Optional[str] = Field(None, max_length=255, description="Transaction ID (auto-generated if not provided)")
     purchase_order_number: Optional[str] = Field(None, max_length=255, description="Purchase order number")
     remarks: Optional[str] = Field(None, max_length=1000, description="Transaction remarks")
@@ -133,7 +167,7 @@ class PurchaseTransactionCreateWithItemsSchema(CreateBaseSchema):
     """Schema for creating a purchase transaction with items."""
     
     transaction_date: date = Field(..., description="Transaction date")
-    vendor_id: UUID = Field(..., description="Vendor ID")
+    vendor_id: str = Field(..., description="Vendor ID (UUID as string)")
     transaction_id: Optional[str] = Field(None, max_length=255, description="Transaction ID (auto-generated if not provided)")
     purchase_order_number: Optional[str] = Field(None, max_length=255, description="Purchase order number")
     remarks: Optional[str] = Field(None, max_length=1000, description="Transaction remarks")
@@ -156,7 +190,20 @@ class PurchaseTransactionUpdateSchema(UpdateBaseSchema):
     """Schema for updating a purchase transaction."""
     
     transaction_date: Optional[date] = Field(None, description="Transaction date")
-    vendor_id: Optional[UUID] = Field(None, description="Vendor ID")
+    vendor_id: Optional[str] = Field(None, description="Vendor ID (UUID as string)")
+
+    @field_validator('vendor_id')
+    @classmethod
+    def validate_vendor_id_update(cls, v):
+        """Validate that vendor_id is a valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     purchase_order_number: Optional[str] = Field(None, max_length=255, description="Purchase order number")
     remarks: Optional[str] = Field(None, max_length=1000, description="Transaction remarks")
     
@@ -169,19 +216,6 @@ class PurchaseTransactionUpdateSchema(UpdateBaseSchema):
         return v
 
 
-class PurchaseTransactionStatusUpdateSchema(BaseModel):
-    """Schema for updating purchase transaction status."""
-    
-    status: str = Field(..., description="New transaction status")
-    
-    @field_validator('status')
-    @classmethod
-    def validate_status(cls, v):
-        """Validate status is a valid purchase status."""
-        valid_statuses = ["DRAFT", "CONFIRMED", "PROCESSING", "RECEIVED", "COMPLETED", "CANCELLED"]
-        if v not in valid_statuses:
-            raise ValueError(f"Status must be one of: {valid_statuses}")
-        return v
 
 
 class PurchaseTransactionResponseSchema(TimeStampedSchema):
@@ -189,9 +223,8 @@ class PurchaseTransactionResponseSchema(TimeStampedSchema):
     
     transaction_id: str
     transaction_date: date
-    vendor_id: UUID
+    vendor_id: str
     vendor: Optional[Dict[str, Any]] = Field(None, description="Vendor details")
-    status: str
     total_amount: Decimal
     grand_total: Decimal
     purchase_order_number: Optional[str]
@@ -223,43 +256,34 @@ class PurchaseTransactionFiltersSchema(BaseModel):
     
     page: Optional[int] = Field(1, ge=1, description="Page number")
     page_size: Optional[int] = Field(50, ge=1, le=100, description="Page size")
-    vendor_id: Optional[UUID] = Field(None, description="Filter by vendor ID")
-    status: Optional[str] = Field(None, description="Filter by status")
+    vendor_id: Optional[str] = Field(None, description="Filter by vendor ID (UUID as string)")
+
+    @field_validator('vendor_id')
+    @classmethod
+    def validate_vendor_id_filter(cls, v):
+        """Validate that vendor_id is a valid UUID string if provided"""
+        if v is None:
+            return v
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format for vendor_id')
     date_from: Optional[date] = Field(None, description="Filter by date from")
     date_to: Optional[date] = Field(None, description="Filter by date to")
     purchase_order_number: Optional[str] = Field(None, description="Filter by purchase order number")
     sort_by: Optional[str] = Field(None, description="Sort by field")
     sort_desc: Optional[bool] = Field(True, description="Sort in descending order")
     is_active: Optional[bool] = Field(None, description="Filter by active status")
-    
-    @field_validator('status')
-    @classmethod
-    def validate_status(cls, v):
-        """Validate status filter."""
-        if v is not None:
-            valid_statuses = ["DRAFT", "CONFIRMED", "PROCESSING", "RECEIVED", "COMPLETED", "CANCELLED"]
-            if v not in valid_statuses:
-                raise ValueError(f"Status must be one of: {valid_statuses}")
-        return v
 
 
 class PurchaseTransactionSearchSchema(BaseModel):
     """Schema for purchase transaction search."""
     
     query: str = Field(..., min_length=1, description="Search query")
-    vendor_id: Optional[UUID] = Field(None, description="Filter by vendor ID")
-    status: Optional[str] = Field(None, description="Filter by status")
+    vendor_id: Optional[str] = Field(None, description="Filter by vendor ID (UUID as string)")
     limit: Optional[int] = Field(100, ge=1, le=100, description="Maximum number of results")
-    
-    @field_validator('status')
-    @classmethod
-    def validate_status(cls, v):
-        """Validate status filter."""
-        if v is not None:
-            valid_statuses = ["DRAFT", "CONFIRMED", "PROCESSING", "RECEIVED", "COMPLETED", "CANCELLED"]
-            if v not in valid_statuses:
-                raise ValueError(f"Status must be one of: {valid_statuses}")
-        return v
 
 
 class PurchaseTransactionStatisticsSchema(BaseModel):
@@ -269,7 +293,6 @@ class PurchaseTransactionStatisticsSchema(BaseModel):
     total_transactions: int = Field(..., description="Total number of transactions")
     recent_amount: Decimal = Field(..., description="Recent period amount")
     recent_transactions: int = Field(..., description="Recent period transactions")
-    status_counts: Dict[str, int] = Field(..., description="Count by status")
 
 
 class PurchaseTransactionItemSummarySchema(BaseModel):
@@ -304,5 +327,5 @@ class BulkCreateItemsResponseSchema(BaseModel):
     )
     total_created: int = Field(..., description="Total items created")
     total_requested: int = Field(..., description="Total items requested")
-    transaction_id: UUID = Field(..., description="Transaction ID")
+    transaction_id: str = Field(..., description="Transaction ID (UUID as string)")
     updated_totals: Dict[str, Decimal] = Field(..., description="Updated transaction totals")

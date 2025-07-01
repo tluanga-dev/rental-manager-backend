@@ -6,7 +6,6 @@ This module defines the abstract interface for the SalesTransactionItem reposito
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.sales import SalesTransactionItem
 
@@ -41,7 +40,7 @@ class ISalesTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, item_id: UUID) -> Optional[SalesTransactionItem]:
+    async def get_by_id(self, item_id: str) -> Optional[SalesTransactionItem]:
         """
         Retrieve a sales transaction item by its ID.
         
@@ -54,7 +53,7 @@ class ISalesTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_transaction(self, transaction_id: UUID) -> List[SalesTransactionItem]:
+    async def get_by_transaction(self, transaction_id: str) -> List[SalesTransactionItem]:
         """
         Get all items for a specific sales transaction.
         
@@ -93,7 +92,7 @@ class ISalesTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, item_id: UUID) -> bool:
+    async def delete(self, item_id: str) -> bool:
         """
         Delete a sales transaction item.
         
@@ -106,7 +105,7 @@ class ISalesTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete_by_transaction(self, transaction_id: UUID) -> int:
+    async def delete_by_transaction(self, transaction_id: str) -> int:
         """
         Delete all items for a specific sales transaction.
         
@@ -121,7 +120,7 @@ class ISalesTransactionItemRepository(ABC):
     @abstractmethod
     async def get_by_inventory_item(
         self,
-        inventory_item_master_id: UUID,
+        inventory_item_master_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[SalesTransactionItem]:
@@ -141,7 +140,7 @@ class ISalesTransactionItemRepository(ABC):
     @abstractmethod
     async def get_by_warehouse(
         self,
-        warehouse_id: UUID,
+        warehouse_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[SalesTransactionItem]:
@@ -161,7 +160,7 @@ class ISalesTransactionItemRepository(ABC):
     @abstractmethod
     async def update_price(
         self,
-        item_id: UUID,
+        item_id: str,
         unit_price: Decimal
     ) -> SalesTransactionItem:
         """
@@ -179,8 +178,8 @@ class ISalesTransactionItemRepository(ABC):
     @abstractmethod
     async def get_total_quantity_sold(
         self,
-        inventory_item_master_id: UUID,
-        warehouse_id: Optional[UUID] = None
+        inventory_item_master_id: str,
+        warehouse_id: Optional[str] = None
     ) -> int:
         """
         Get the total quantity sold for an inventory item.
@@ -208,7 +207,7 @@ class ISalesTransactionItemRepository(ABC):
         pass
     
     @abstractmethod
-    async def calculate_transaction_totals(self, transaction_id: UUID) -> Dict[str, Decimal]:
+    async def calculate_transaction_totals(self, transaction_id: str) -> Dict[str, Decimal]:
         """
         Calculate totals for all items in a transaction.
         

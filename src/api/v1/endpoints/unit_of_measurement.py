@@ -1,5 +1,4 @@
 from typing import List
-from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -60,7 +59,7 @@ async def get_unit_statistics(
 
 @router.get("/{unit_id}", response_model=UnitOfMeasurementResponse)
 async def get_unit_of_measurement(
-    unit_id: UUID,
+    unit_id: str,
     use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
     """Get unit of measurement by ID"""
@@ -141,7 +140,7 @@ async def get_unit_by_abbreviation(
 
 @router.put("/{unit_id}", response_model=UnitOfMeasurementResponse)
 async def update_unit_of_measurement(
-    unit_id: UUID,
+    unit_id: str,
     unit_data: UnitOfMeasurementUpdate,
     use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
@@ -160,7 +159,7 @@ async def update_unit_of_measurement(
 
 @router.patch("/{unit_id}/deactivate", status_code=204)
 async def deactivate_unit_of_measurement(
-    unit_id: UUID,
+    unit_id: str,
     use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
     """Deactivate a unit of measurement (soft delete)"""
@@ -172,7 +171,7 @@ async def deactivate_unit_of_measurement(
 
 @router.patch("/{unit_id}/activate", status_code=204)
 async def activate_unit_of_measurement(
-    unit_id: UUID,
+    unit_id: str,
     use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
     """Activate a unit of measurement"""
@@ -184,7 +183,7 @@ async def activate_unit_of_measurement(
 
 @router.delete("/{unit_id}", status_code=204)
 async def delete_unit_of_measurement(
-    unit_id: UUID,
+    unit_id: str,
     use_cases: UnitOfMeasurementUseCases = Depends(get_unit_use_cases),
 ):
     """Delete a unit of measurement (soft delete)"""

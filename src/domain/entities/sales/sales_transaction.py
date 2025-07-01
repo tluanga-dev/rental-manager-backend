@@ -7,7 +7,6 @@ in the system. It handles the core business logic related to sales transactions.
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List, Optional
-from uuid import UUID
 
 from src.domain.entities.base_entity import BaseEntity
 from src.domain.value_objects.sales.sales_status import SalesStatus
@@ -25,7 +24,7 @@ class SalesTransaction(BaseEntity):
     
     def __init__(
         self,
-        customer_id: UUID,
+        customer_id: str,
         order_date: datetime,
         status: SalesStatus = SalesStatus.DRAFT,
         payment_status: PaymentStatus = PaymentStatus.PENDING,
@@ -43,7 +42,7 @@ class SalesTransaction(BaseEntity):
         shipping_address: Optional[str] = None,
         billing_address: Optional[str] = None,
         purchase_order_number: Optional[str] = None,
-        sales_person_id: Optional[UUID] = None,
+        sales_person_id: Optional[str] = None,
         notes: Optional[str] = None,
         customer_notes: Optional[str] = None,
         **kwargs

@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
-from uuid import UUID
 
 from .base_entity import BaseEntity
 
@@ -11,13 +10,13 @@ class InventoryItemMaster(BaseEntity):
         self,
         name: str,
         sku: str,
-        item_sub_category_id: UUID,
-        unit_of_measurement_id: UUID,
+        item_sub_category_id: str,
+        unit_of_measurement_id: str,
         tracking_type: str,
         is_consumable: bool = False,
         description: Optional[str] = None,
         contents: Optional[str] = None,
-        packaging_id: Optional[UUID] = None,
+        packaging_id: Optional[str] = None,
         brand: Optional[str] = None,
         manufacturer_part_number: Optional[str] = None,
         product_id: Optional[str] = None,
@@ -27,7 +26,7 @@ class InventoryItemMaster(BaseEntity):
         height: Optional[Decimal] = None,
         renting_period: int = 1,
         quantity: int = 0,
-        inventory_id: Optional[UUID] = None,
+        inventory_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
@@ -125,29 +124,29 @@ class InventoryItemMaster(BaseEntity):
         self._touch_updated_at()
 
     @property
-    def item_sub_category_id(self) -> UUID:
+    def item_sub_category_id(self) -> str:
         return self._item_sub_category_id
 
     @item_sub_category_id.setter
-    def item_sub_category_id(self, value: UUID):
+    def item_sub_category_id(self, value: str):
         self._item_sub_category_id = value
         self._touch_updated_at()
 
     @property
-    def unit_of_measurement_id(self) -> UUID:
+    def unit_of_measurement_id(self) -> str:
         return self._unit_of_measurement_id
 
     @unit_of_measurement_id.setter
-    def unit_of_measurement_id(self, value: UUID):
+    def unit_of_measurement_id(self, value: str):
         self._unit_of_measurement_id = value
         self._touch_updated_at()
 
     @property
-    def packaging_id(self) -> Optional[UUID]:
+    def packaging_id(self) -> Optional[str]:
         return self._packaging_id
 
     @packaging_id.setter
-    def packaging_id(self, value: Optional[UUID]):
+    def packaging_id(self, value: Optional[str]):
         self._packaging_id = value
         self._touch_updated_at()
 

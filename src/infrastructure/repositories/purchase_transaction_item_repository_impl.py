@@ -5,7 +5,6 @@ This module provides the SQLAlchemy implementation of the IPurchaseTransactionIt
 
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session, joinedload
@@ -42,7 +41,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
         
         return [self._model_to_entity(model) for model in models]
     
-    async def get_by_id(self, item_id: UUID) -> Optional[PurchaseTransactionItem]:
+    async def get_by_id(self, item_id: str) -> Optional[PurchaseTransactionItem]:
         """Retrieve a purchase transaction item by its ID."""
         model = self.session.query(PurchaseTransactionItemModel).filter(
             PurchaseTransactionItemModel.id == item_id,
@@ -53,7 +52,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
     
     async def get_by_transaction_id(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -94,7 +93,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def delete(self, item_id: UUID) -> bool:
+    async def delete(self, item_id: str) -> bool:
         """Soft delete a purchase transaction item."""
         model = self.session.query(PurchaseTransactionItemModel).filter(
             PurchaseTransactionItemModel.id == item_id
@@ -107,7 +106,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
         self.session.commit()
         return True
     
-    async def count_by_transaction_id(self, transaction_id: UUID) -> int:
+    async def count_by_transaction_id(self, transaction_id: str) -> int:
         """Count items for a specific purchase transaction."""
         return self.session.query(PurchaseTransactionItemModel).filter(
             PurchaseTransactionItemModel.transaction_id == transaction_id,
@@ -116,7 +115,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
     
     async def get_by_inventory_item_id(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -132,7 +131,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
     
     async def get_by_warehouse_id(
         self,
-        warehouse_id: UUID,
+        warehouse_id: str,
         skip: int = 0,
         limit: int = 100
     ) -> List[PurchaseTransactionItem]:
@@ -172,7 +171,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
                 return False
         return True
     
-    async def get_transaction_item_summary(self, transaction_id: UUID) -> Dict[str, Any]:
+    async def get_transaction_item_summary(self, transaction_id: str) -> Dict[str, Any]:
         """Get summary statistics for all items in a transaction."""
         query = self.session.query(PurchaseTransactionItemModel).filter(
             PurchaseTransactionItemModel.transaction_id == transaction_id,
@@ -216,7 +215,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
     
     async def update_pricing(
         self,
-        item_id: UUID,
+        item_id: str,
         unit_price: Optional[Decimal] = None,
         discount: Optional[Decimal] = None,
         tax_amount: Optional[Decimal] = None
@@ -293,7 +292,6 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
             return None
         
         return PurchaseTransactionItem(
-            id=model.id,
             transaction_id=model.transaction_id,
             inventory_item_id=model.inventory_item_id,
             warehouse_id=model.warehouse_id,
@@ -306,6 +304,7 @@ class SQLAlchemyPurchaseTransactionItemRepository(IPurchaseTransactionItemReposi
             remarks=model.remarks,
             warranty_period_type=model.warranty_period_type,
             warranty_period=model.warranty_period,
+            entity_id=model.id,
             created_at=model.created_at,
             updated_at=model.updated_at,
             created_by=model.created_by,

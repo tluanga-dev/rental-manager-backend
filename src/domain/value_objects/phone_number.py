@@ -27,7 +27,15 @@ class PhoneNumber:
     @staticmethod
     def _validate_format(number: str) -> bool:
         """Validate phone number format using regex"""
-        pattern = r"^\+?1?\d{9,15}$"
+        # Remove + for length checking
+        digits_only = number.lstrip('+')
+        
+        # Check total length (including country code)
+        if len(digits_only) < 9 or len(digits_only) > 15:
+            return False
+            
+        # Check format: optional +, then all digits
+        pattern = r"^\+?\d{9,15}$"
         return bool(re.match(pattern, number))
     
     def formatted(self) -> str:

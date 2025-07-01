@@ -7,10 +7,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.purchase_transaction import PurchaseTransaction
-from src.domain.value_objects.purchase.purchase_status import PurchaseStatus
 
 
 class IPurchaseTransactionRepository(ABC):
@@ -30,7 +28,7 @@ class IPurchaseTransactionRepository(ABC):
         pass
     
     @abstractmethod
-    async def get_by_id(self, transaction_id: UUID) -> Optional[PurchaseTransaction]:
+    async def get_by_id(self, transaction_id: str) -> Optional[PurchaseTransaction]:
         """
         Retrieve a purchase transaction by its ID.
         
@@ -69,7 +67,7 @@ class IPurchaseTransactionRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, transaction_id: UUID) -> bool:
+    async def delete(self, transaction_id: str) -> bool:
         """
         Soft delete a purchase transaction.
         
@@ -121,7 +119,7 @@ class IPurchaseTransactionRepository(ABC):
     @abstractmethod
     async def get_by_vendor(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         skip: int = 0,
         limit: int = 100,
         include_cancelled: bool = False
@@ -156,25 +154,6 @@ class IPurchaseTransactionRepository(ABC):
         """
         pass
     
-    @abstractmethod
-    async def get_pending_transactions(self) -> List[PurchaseTransaction]:
-        """
-        Get all purchase transactions that are pending processing.
-        
-        Returns:
-            List of purchase transactions with DRAFT or CONFIRMED status
-        """
-        pass
-    
-    @abstractmethod
-    async def get_in_progress_transactions(self) -> List[PurchaseTransaction]:
-        """
-        Get all purchase transactions currently in progress.
-        
-        Returns:
-            List of purchase transactions with PROCESSING or RECEIVED status
-        """
-        pass
     
     @abstractmethod
     async def get_purchase_summary(
@@ -214,28 +193,11 @@ class IPurchaseTransactionRepository(ABC):
         """
         pass
     
-    @abstractmethod
-    async def update_status(
-        self,
-        transaction_id: UUID,
-        status: PurchaseStatus
-    ) -> PurchaseTransaction:
-        """
-        Update the status of a purchase transaction.
-        
-        Args:
-            transaction_id: The transaction's UUID
-            status: The new status
-            
-        Returns:
-            The updated purchase transaction
-        """
-        pass
     
     @abstractmethod
     async def update_totals(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         total_amount: Decimal,
         grand_total: Decimal
     ) -> PurchaseTransaction:

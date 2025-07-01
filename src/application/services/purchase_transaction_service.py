@@ -7,7 +7,6 @@ It orchestrates use cases and handles complex business workflows.
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from src.domain.entities.purchase_transaction import PurchaseTransaction
 from src.domain.entities.purchase_transaction_item import PurchaseTransactionItem
@@ -17,7 +16,6 @@ from src.domain.repositories.vendor_repository import VendorRepository
 from src.domain.repositories.inventory_item_master_repository import InventoryItemMasterRepository
 from src.domain.repositories.warehouse_repository import WarehouseRepository
 from src.domain.repositories.id_manager_repository import IdManagerRepository
-from src.domain.value_objects.purchase.purchase_status import PurchaseStatus
 
 from ..use_cases.purchase_transaction_use_cases import (
     CreatePurchaseTransactionUseCase,
@@ -25,7 +23,6 @@ from ..use_cases.purchase_transaction_use_cases import (
     GetPurchaseTransactionUseCase,
     GetPurchaseTransactionByTransactionIdUseCase,
     UpdatePurchaseTransactionUseCase,
-    UpdatePurchaseTransactionStatusUseCase,
     DeletePurchaseTransactionUseCase,
     ListPurchaseTransactionsUseCase,
     SearchPurchaseTransactionsUseCase,
@@ -99,9 +96,6 @@ class PurchaseTransactionService:
             self.vendor_repository
         )
         
-        self.update_transaction_status_use_case = UpdatePurchaseTransactionStatusUseCase(
-            self.purchase_repository
-        )
         
         self.delete_transaction_use_case = DeletePurchaseTransactionUseCase(
             self.purchase_repository
@@ -169,7 +163,7 @@ class PurchaseTransactionService:
     
     async def create_transaction(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         transaction_date: date,
         purchase_order_number: Optional[str] = None,
         remarks: Optional[str] = None,
@@ -186,7 +180,7 @@ class PurchaseTransactionService:
     
     async def create_transaction_with_items(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         transaction_date: date,
         items: List[Dict[str, Any]],
         purchase_order_number: Optional[str] = None,
@@ -203,7 +197,7 @@ class PurchaseTransactionService:
             created_by=created_by
         )
     
-    async def get_transaction(self, transaction_id: UUID) -> Optional[PurchaseTransaction]:
+    async def get_transaction(self, transaction_id: str) -> Optional[PurchaseTransaction]:
         """Get a purchase transaction by ID."""
         return await self.get_transaction_use_case.execute(transaction_id)
     
@@ -211,7 +205,7 @@ class PurchaseTransactionService:
         """Get a purchase transaction by transaction ID."""
         return await self.get_transaction_by_transaction_id_use_case.execute(transaction_id)
     
-    async def get_transaction_with_items(self, transaction_id: UUID) -> Optional[Dict[str, Any]]:
+    async def get_transaction_with_items(self, transaction_id: str) -> Optional[Dict[str, Any]]:
         """Get a purchase transaction with its items."""
         transaction = await self.get_transaction(transaction_id)
         if not transaction:
@@ -229,8 +223,8 @@ class PurchaseTransactionService:
     
     async def update_transaction(
         self,
-        transaction_id: UUID,
-        vendor_id: Optional[UUID] = None,
+        transaction_id: str,
+        vendor_id: Optional[str] = None,
         transaction_date: Optional[date] = None,
         purchase_order_number: Optional[str] = None,
         remarks: Optional[str] = None
@@ -244,17 +238,8 @@ class PurchaseTransactionService:
             remarks=remarks
         )
     
-    async def update_transaction_status(
-        self,
-        transaction_id: UUID,
-        new_status: PurchaseStatus
-    ) -> PurchaseTransaction:
-        """Update purchase transaction status."""
-        return await self.update_transaction_status_use_case.execute(
-            transaction_id, new_status
-        )
     
-    async def delete_transaction(self, transaction_id: UUID) -> bool:
+    async def delete_transaction(self, transaction_id: str) -> bool:
         """Delete (soft delete) a purchase transaction."""
         return await self.delete_transaction_use_case.execute(transaction_id)
     
@@ -262,7 +247,7 @@ class PurchaseTransactionService:
         self,
         page: int = 1,
         page_size: int = 50,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         status: Optional[str] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
@@ -286,7 +271,7 @@ class PurchaseTransactionService:
     async def search_transactions(
         self,
         query: str,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         status: Optional[str] = None
     ) -> List[PurchaseTransaction]:
         """Search purchase transactions by query."""
@@ -304,11 +289,11 @@ class PurchaseTransactionService:
     
     async def create_item(
         self,
-        transaction_id: UUID,
-        item_master_id: UUID,
+        transaction_id: str,
+        item_master_id: str,
         quantity: int,
         unit_price: Decimal,
-        warehouse_id: Optional[UUID] = None,
+        warehouse_id: Optional[str] = None,
         serial_number: Optional[List[str]] = None,
         discount: Decimal = Decimal("0"),
         tax_amount: Decimal = Decimal("0"),
@@ -335,7 +320,7 @@ class PurchaseTransactionService:
     
     async def bulk_create_items(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         items: List[Dict[str, Any]],
         created_by: Optional[str] = None
     ) -> List[PurchaseTransactionItem]:
@@ -346,13 +331,13 @@ class PurchaseTransactionService:
             created_by=created_by
         )
     
-    async def get_item(self, item_id: UUID) -> Optional[PurchaseTransactionItem]:
+    async def get_item(self, item_id: str) -> Optional[PurchaseTransactionItem]:
         """Get a purchase transaction item by ID."""
         return await self.get_item_use_case.execute(item_id)
     
     async def get_items_by_transaction(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         page: int = 1,
         page_size: int = 50
     ) -> Dict[str, Any]:
@@ -365,7 +350,7 @@ class PurchaseTransactionService:
     
     async def update_item(
         self,
-        item_id: UUID,
+        item_id: str,
         unit_price: Optional[Decimal] = None,
         discount: Optional[Decimal] = None,
         tax_amount: Optional[Decimal] = None,
@@ -384,11 +369,11 @@ class PurchaseTransactionService:
             warranty_period=warranty_period
         )
     
-    async def delete_item(self, item_id: UUID) -> bool:
+    async def delete_item(self, item_id: str) -> bool:
         """Delete (soft delete) a purchase transaction item."""
         return await self.delete_item_use_case.execute(item_id)
     
-    async def get_item_summary(self, transaction_id: UUID) -> Dict[str, Any]:
+    async def get_item_summary(self, transaction_id: str) -> Dict[str, Any]:
         """Get summary statistics for items in a transaction."""
         return await self.get_item_summary_use_case.execute(transaction_id)
     
@@ -403,24 +388,3 @@ class PurchaseTransactionService:
         """Get all items that have warranty information."""
         return await self.get_items_with_warranty_use_case.execute(warranty_expiring_before)
     
-    # Workflow methods
-    
-    async def confirm_transaction(self, transaction_id: UUID) -> PurchaseTransaction:
-        """Confirm a draft transaction."""
-        return await self.update_transaction_status(transaction_id, PurchaseStatus.CONFIRMED)
-    
-    async def start_processing(self, transaction_id: UUID) -> PurchaseTransaction:
-        """Start processing a confirmed transaction."""
-        return await self.update_transaction_status(transaction_id, PurchaseStatus.PROCESSING)
-    
-    async def mark_as_received(self, transaction_id: UUID) -> PurchaseTransaction:
-        """Mark a processing transaction as received."""
-        return await self.update_transaction_status(transaction_id, PurchaseStatus.RECEIVED)
-    
-    async def complete_transaction(self, transaction_id: UUID) -> PurchaseTransaction:
-        """Complete a received transaction."""
-        return await self.update_transaction_status(transaction_id, PurchaseStatus.COMPLETED)
-    
-    async def cancel_transaction(self, transaction_id: UUID) -> PurchaseTransaction:
-        """Cancel a transaction."""
-        return await self.update_transaction_status(transaction_id, PurchaseStatus.CANCELLED)

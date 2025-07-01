@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from ...domain.entities.id_manager import IdManager
 from ..services.id_manager_service import IdManagerService

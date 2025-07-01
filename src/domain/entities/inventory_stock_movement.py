@@ -1,21 +1,20 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from .base_entity import BaseEntity
 
 
 @dataclass
 class InventoryStockMovement(BaseEntity):
-    inventory_item_id: UUID
+    inventory_item_id: str
     movement_type: str
     inventory_transaction_id: str
     quantity: int
     quantity_on_hand_before: int
     quantity_on_hand_after: int
-    warehouse_from_id: Optional[UUID] = None
-    warehouse_to_id: Optional[UUID] = None
+    warehouse_from_id: Optional[str] = None
+    warehouse_to_id: Optional[str] = None
     notes: Optional[str] = None
 
     def __post_init__(self):

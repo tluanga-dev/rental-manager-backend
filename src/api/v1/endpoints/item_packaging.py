@@ -1,5 +1,4 @@
 from typing import List
-from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -44,7 +43,7 @@ async def create_item_packaging(
 
 @router.get("/{item_packaging_id}", response_model=ItemPackagingResponse)
 async def get_item_packaging(
-    item_packaging_id: UUID,
+    item_packaging_id: str,
     use_cases: ItemPackagingUseCases = Depends(get_item_packaging_use_cases),
 ):
     """Get item packaging by ID"""
@@ -134,7 +133,7 @@ async def get_item_packaging_by_label(
 
 @router.put("/{item_packaging_id}", response_model=ItemPackagingResponse)
 async def update_item_packaging(
-    item_packaging_id: UUID,
+    item_packaging_id: str,
     item_packaging_data: ItemPackagingUpdate,
     use_cases: ItemPackagingUseCases = Depends(get_item_packaging_use_cases),
 ):
@@ -154,7 +153,7 @@ async def update_item_packaging(
 
 @router.patch("/{item_packaging_id}/deactivate", status_code=204)
 async def deactivate_item_packaging(
-    item_packaging_id: UUID,
+    item_packaging_id: str,
     use_cases: ItemPackagingUseCases = Depends(get_item_packaging_use_cases),
 ):
     """Deactivate an item packaging (soft delete)"""
@@ -166,7 +165,7 @@ async def deactivate_item_packaging(
 
 @router.patch("/{item_packaging_id}/activate", status_code=204)
 async def activate_item_packaging(
-    item_packaging_id: UUID,
+    item_packaging_id: str,
     use_cases: ItemPackagingUseCases = Depends(get_item_packaging_use_cases),
 ):
     """Activate an item packaging"""

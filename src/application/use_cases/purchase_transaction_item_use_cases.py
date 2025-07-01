@@ -5,7 +5,7 @@ This module defines use cases for purchase transaction item operations.
 
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.purchase_transaction_item import PurchaseTransactionItem
@@ -35,11 +35,11 @@ class CreatePurchaseTransactionItemUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
-        item_master_id: UUID,
+        transaction_id: str,
+        item_master_id: str,
         quantity: int,
         unit_price: Decimal,
-        warehouse_id: Optional[UUID] = None,
+        warehouse_id: Optional[str] = None,
         serial_number: Optional[List[str]] = None,
         discount: Decimal = Decimal("0"),
         tax_amount: Decimal = Decimal("0"),
@@ -55,7 +55,7 @@ class CreatePurchaseTransactionItemUseCase:
             raise ValueError(f"Purchase transaction with id {transaction_id} not found")
         
         if not transaction.can_add_items():
-            raise ValueError(f"Cannot add items to transaction with status {transaction.status}")
+            raise ValueError(f"Cannot add items to transaction")
         
         # Validate inventory item exists
         inventory_item = await self.inventory_repository.find_by_id(item_master_id)
@@ -101,7 +101,7 @@ class CreatePurchaseTransactionItemUseCase:
         
         return created_item
     
-    async def _update_transaction_totals(self, transaction_id: UUID) -> None:
+    async def _update_transaction_totals(self, transaction_id: str) -> None:
         """Update transaction totals based on current items."""
         summary = await self.purchase_item_repository.get_transaction_item_summary(transaction_id)
         total_amount = Decimal(str(summary["total_amount"]))
@@ -131,7 +131,7 @@ class BulkCreatePurchaseTransactionItemsUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         items: List[Dict[str, Any]],
         created_by: Optional[str] = None
     ) -> List[PurchaseTransactionItem]:
@@ -142,7 +142,7 @@ class BulkCreatePurchaseTransactionItemsUseCase:
             raise ValueError(f"Purchase transaction with id {transaction_id} not found")
         
         if not transaction.can_add_items():
-            raise ValueError(f"Cannot add items to transaction with status {transaction.status}")
+            raise ValueError(f"Cannot add items to transaction")
         
         # Validate all items first
         transaction_items = []
@@ -198,7 +198,7 @@ class BulkCreatePurchaseTransactionItemsUseCase:
         
         return created_items
     
-    async def _update_transaction_totals(self, transaction_id: UUID) -> None:
+    async def _update_transaction_totals(self, transaction_id: str) -> None:
         """Update transaction totals based on current items."""
         summary = await self.purchase_item_repository.get_transaction_item_summary(transaction_id)
         total_amount = Decimal(str(summary["total_amount"]))
@@ -217,7 +217,7 @@ class GetPurchaseTransactionItemUseCase:
         """Initialize the use case with required repositories."""
         self.purchase_item_repository = purchase_item_repository
     
-    async def execute(self, item_id: UUID) -> Optional[PurchaseTransactionItem]:
+    async def execute(self, item_id: str) -> Optional[PurchaseTransactionItem]:
         """Get a purchase transaction item by ID."""
         return await self.purchase_item_repository.get_by_id(item_id)
 
@@ -231,7 +231,7 @@ class GetPurchaseTransactionItemsByTransactionUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         page: int = 1,
         page_size: int = 50
     ) -> Dict[str, Any]:
@@ -267,7 +267,7 @@ class UpdatePurchaseTransactionItemUseCase:
     
     async def execute(
         self,
-        item_id: UUID,
+        item_id: str,
         unit_price: Optional[Decimal] = None,
         discount: Optional[Decimal] = None,
         tax_amount: Optional[Decimal] = None,
@@ -287,7 +287,7 @@ class UpdatePurchaseTransactionItemUseCase:
             raise ValueError(f"Purchase transaction with id {item.transaction_id} not found")
         
         if not transaction.is_editable():
-            raise ValueError(f"Cannot edit items for transaction with status {transaction.status}")
+            raise ValueError(f"Cannot edit items for transaction")
         
         # Update pricing
         if unit_price is not None or discount is not None or tax_amount is not None:
@@ -309,7 +309,7 @@ class UpdatePurchaseTransactionItemUseCase:
         
         return updated_item
     
-    async def _update_transaction_totals(self, transaction_id: UUID) -> None:
+    async def _update_transaction_totals(self, transaction_id: str) -> None:
         """Update transaction totals based on current items."""
         summary = await self.purchase_item_repository.get_transaction_item_summary(transaction_id)
         total_amount = Decimal(str(summary["total_amount"]))
@@ -333,7 +333,7 @@ class DeletePurchaseTransactionItemUseCase:
         self.purchase_repository = purchase_repository
         self.purchase_item_repository = purchase_item_repository
     
-    async def execute(self, item_id: UUID) -> bool:
+    async def execute(self, item_id: str) -> bool:
         """Delete (soft delete) a purchase transaction item."""
         # Get existing item
         item = await self.purchase_item_repository.get_by_id(item_id)
@@ -346,7 +346,7 @@ class DeletePurchaseTransactionItemUseCase:
             raise ValueError(f"Purchase transaction with id {item.transaction_id} not found")
         
         if not transaction.is_editable():
-            raise ValueError(f"Cannot delete items for transaction with status {transaction.status}")
+            raise ValueError(f"Cannot delete items for transaction")
         
         # Delete the item
         deleted = await self.purchase_item_repository.delete(item_id)
@@ -357,7 +357,7 @@ class DeletePurchaseTransactionItemUseCase:
         
         return deleted
     
-    async def _update_transaction_totals(self, transaction_id: UUID) -> None:
+    async def _update_transaction_totals(self, transaction_id: str) -> None:
         """Update transaction totals based on current items."""
         summary = await self.purchase_item_repository.get_transaction_item_summary(transaction_id)
         total_amount = Decimal(str(summary["total_amount"]))
@@ -376,7 +376,7 @@ class GetPurchaseTransactionItemSummaryUseCase:
         """Initialize the use case with required repositories."""
         self.purchase_item_repository = purchase_item_repository
     
-    async def execute(self, transaction_id: UUID) -> Dict[str, Any]:
+    async def execute(self, transaction_id: str) -> Dict[str, Any]:
         """Get summary statistics for items in a transaction."""
         return await self.purchase_item_repository.get_transaction_item_summary(transaction_id)
 

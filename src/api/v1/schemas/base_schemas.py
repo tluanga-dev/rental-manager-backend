@@ -1,16 +1,25 @@
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class TimeStampedSchema(BaseModel):
-    id: UUID
+    id: str = Field(..., description="UUID as string")
     created_at: datetime
     updated_at: datetime
     created_by: Optional[str] = None
     is_active: bool = True
+
+    @validator('id')
+    def validate_uuid_format(cls, v):
+        """Validate that id is a valid UUID string format"""
+        import uuid
+        try:
+            uuid.UUID(v)
+            return v
+        except ValueError:
+            raise ValueError('Invalid UUID format')
 
     class Config:
         from_attributes = True

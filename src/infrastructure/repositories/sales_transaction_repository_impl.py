@@ -6,7 +6,6 @@ This module provides the SQLAlchemy implementation of the ISalesTransactionRepos
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session, joinedload
@@ -37,7 +36,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def get_by_id(self, transaction_id: UUID) -> Optional[SalesTransaction]:
+    async def get_by_id(self, transaction_id: str) -> Optional[SalesTransaction]:
         """Retrieve a sales transaction by its ID."""
         model = self.session.query(SalesTransactionModel).filter(
             SalesTransactionModel.id == transaction_id,
@@ -101,7 +100,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
         self.session.refresh(model)
         return self._model_to_entity(model)
     
-    async def delete(self, transaction_id: UUID) -> bool:
+    async def delete(self, transaction_id: str) -> bool:
         """Soft delete a sales transaction."""
         model = self.session.query(SalesTransactionModel).filter(
             SalesTransactionModel.id == transaction_id
@@ -174,7 +173,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
     
     async def get_by_customer(
         self,
-        customer_id: UUID,
+        customer_id: str,
         skip: int = 0,
         limit: int = 100,
         include_cancelled: bool = False
@@ -223,7 +222,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
         
         return [self._model_to_entity(model) for model in models]
     
-    async def get_customer_outstanding_balance(self, customer_id: UUID) -> Decimal:
+    async def get_customer_outstanding_balance(self, customer_id: str) -> Decimal:
         """Calculate the total outstanding balance for a customer."""
         result = self.session.query(
             func.sum(SalesTransactionModel.grand_total - SalesTransactionModel.amount_paid)
@@ -355,7 +354,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
     
     async def update_payment_status(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         payment_status: PaymentStatus,
         amount_paid: Decimal
     ) -> SalesTransaction:
@@ -376,7 +375,7 @@ class SQLAlchemySalesTransactionRepository(ISalesTransactionRepository):
     
     async def update_status(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         status: SalesStatus
     ) -> SalesTransaction:
         """Update the status of a sales transaction."""

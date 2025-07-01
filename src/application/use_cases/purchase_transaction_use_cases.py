@@ -6,7 +6,7 @@ This module defines use cases for purchase transaction operations.
 from datetime import datetime, date
 from decimal import Decimal
 from typing import List, Optional, Dict, Any
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.purchase_transaction import PurchaseTransaction
@@ -17,7 +17,6 @@ from src.domain.repositories.vendor_repository import VendorRepository
 from src.domain.repositories.inventory_item_master_repository import InventoryItemMasterRepository
 from src.domain.repositories.warehouse_repository import WarehouseRepository
 from src.domain.repositories.id_manager_repository import IdManagerRepository
-from src.domain.value_objects.purchase.purchase_status import PurchaseStatus
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +39,7 @@ class CreatePurchaseTransactionUseCase:
     
     async def execute(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         transaction_date: date,
         purchase_order_number: Optional[str] = None,
         remarks: Optional[str] = None,
@@ -65,7 +64,6 @@ class CreatePurchaseTransactionUseCase:
             transaction_id=transaction_id,
             transaction_date=transaction_date,
             vendor_id=vendor_id,
-            status=PurchaseStatus.DRAFT,
             purchase_order_number=purchase_order_number,
             remarks=remarks,
             created_by=created_by
@@ -107,7 +105,7 @@ class CreatePurchaseTransactionWithItemsUseCase:
     
     async def execute(
         self,
-        vendor_id: UUID,
+        vendor_id: str,
         transaction_date: date,
         items: List[Dict[str, Any]],
         purchase_order_number: Optional[str] = None,
@@ -189,7 +187,7 @@ class GetPurchaseTransactionUseCase:
         """Initialize the use case with required repositories."""
         self.purchase_repository = purchase_repository
     
-    async def execute(self, transaction_id: UUID) -> Optional[PurchaseTransaction]:
+    async def execute(self, transaction_id: str) -> Optional[PurchaseTransaction]:
         """Get a purchase transaction by ID."""
         return await self.purchase_repository.get_by_id(transaction_id)
 
@@ -220,8 +218,8 @@ class UpdatePurchaseTransactionUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
-        vendor_id: Optional[UUID] = None,
+        transaction_id: str,
+        vendor_id: Optional[str] = None,
         transaction_date: Optional[date] = None,
         purchase_order_number: Optional[str] = None,
         remarks: Optional[str] = None
@@ -234,7 +232,7 @@ class UpdatePurchaseTransactionUseCase:
         
         # Check if transaction is editable
         if not transaction.is_editable():
-            raise ValueError(f"Cannot edit transaction with status {transaction.status}")
+            raise ValueError(f"Cannot edit transaction")
         
         # Validate vendor if provided
         if vendor_id and vendor_id != transaction.vendor_id:
@@ -256,40 +254,6 @@ class UpdatePurchaseTransactionUseCase:
         return await self.purchase_repository.update(transaction)
 
 
-class UpdatePurchaseTransactionStatusUseCase:
-    """Use case for updating purchase transaction status."""
-    
-    def __init__(self, purchase_repository: IPurchaseTransactionRepository):
-        """Initialize the use case with required repositories."""
-        self.purchase_repository = purchase_repository
-    
-    async def execute(
-        self,
-        transaction_id: UUID,
-        new_status: PurchaseStatus
-    ) -> PurchaseTransaction:
-        """Update purchase transaction status."""
-        # Get existing transaction
-        transaction = await self.purchase_repository.get_by_id(transaction_id)
-        if not transaction:
-            raise ValueError(f"Purchase transaction with id {transaction_id} not found")
-        
-        # Update status using business logic
-        if new_status == PurchaseStatus.CONFIRMED:
-            transaction.confirm_transaction()
-        elif new_status == PurchaseStatus.PROCESSING:
-            transaction.start_processing()
-        elif new_status == PurchaseStatus.RECEIVED:
-            transaction.mark_as_received()
-        elif new_status == PurchaseStatus.COMPLETED:
-            transaction.complete_transaction()
-        elif new_status == PurchaseStatus.CANCELLED:
-            transaction.cancel_transaction()
-        else:
-            # Direct status update for other cases
-            transaction.status = new_status
-        
-        return await self.purchase_repository.update(transaction)
 
 
 class DeletePurchaseTransactionUseCase:
@@ -299,7 +263,7 @@ class DeletePurchaseTransactionUseCase:
         """Initialize the use case with required repositories."""
         self.purchase_repository = purchase_repository
     
-    async def execute(self, transaction_id: UUID) -> bool:
+    async def execute(self, transaction_id: str) -> bool:
         """Delete (soft delete) a purchase transaction."""
         # Get existing transaction
         transaction = await self.purchase_repository.get_by_id(transaction_id)
@@ -324,7 +288,7 @@ class ListPurchaseTransactionsUseCase:
         self,
         page: int = 1,
         page_size: int = 50,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         status: Optional[str] = None,
         date_from: Optional[date] = None,
         date_to: Optional[date] = None,
@@ -376,7 +340,7 @@ class SearchPurchaseTransactionsUseCase:
     async def execute(
         self,
         query: str,
-        vendor_id: Optional[UUID] = None,
+        vendor_id: Optional[str] = None,
         status: Optional[str] = None
     ) -> List[PurchaseTransaction]:
         """Search purchase transactions by query."""

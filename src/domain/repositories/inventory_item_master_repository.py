@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
-from uuid import UUID
 
 from ..entities.inventory_item_master import InventoryItemMaster
 
@@ -11,7 +10,7 @@ class InventoryItemMasterRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_by_id(self, inventory_item_id: UUID) -> Optional[InventoryItemMaster]:
+    async def find_by_id(self, inventory_item_id: str) -> Optional[InventoryItemMaster]:
         pass
     
     @abstractmethod
@@ -27,7 +26,7 @@ class InventoryItemMasterRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_by_subcategory(self, subcategory_id: UUID, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
+    async def find_by_subcategory(self, subcategory_id: str, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
         pass
     
     @abstractmethod
@@ -47,15 +46,15 @@ class InventoryItemMasterRepository(ABC):
         pass
     
     @abstractmethod
-    async def delete(self, inventory_item_id: UUID) -> bool:
+    async def delete(self, inventory_item_id: str) -> bool:
         pass
     
     @abstractmethod
-    async def exists_by_sku(self, sku: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_sku(self, sku: str, exclude_id: Optional[str] = None) -> bool:
         pass
     
     @abstractmethod
-    async def exists_by_name(self, name: str, exclude_id: Optional[UUID] = None) -> bool:
+    async def exists_by_name(self, name: str, exclude_id: Optional[str] = None) -> bool:
         pass
     
     @abstractmethod
@@ -63,9 +62,9 @@ class InventoryItemMasterRepository(ABC):
         pass
     
     @abstractmethod
-    async def count_by_subcategory(self, subcategory_id: UUID) -> int:
+    async def count_by_subcategory(self, subcategory_id: str) -> int:
         pass
     
     @abstractmethod
-    async def update_quantity(self, inventory_item_id: UUID, new_quantity: int) -> bool:
+    async def update_quantity(self, inventory_item_id: str, new_quantity: int) -> bool:
         pass

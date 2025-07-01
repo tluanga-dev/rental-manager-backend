@@ -169,7 +169,7 @@ class TestItemCategoryUseCases:
         mock_item_category_repository.exists.return_value = True
         mock_item_category_repository.exists_by_name_and_category.return_value = False
         mock_item_category_repository.exists_by_abbreviation.return_value = False
-        mock_item_category_repository.save_subcategory.return_value = ItemSubCategory(
+        mock_item_category_repository.save.return_value = ItemSubCategory(
             name=sample_subcategory_data["name"],
             abbreviation=sample_subcategory_data["abbreviation"],
             item_category_id=sample_category.id
@@ -185,12 +185,12 @@ class TestItemCategoryUseCases:
         assert result.name == sample_subcategory_data["name"]
         mock_item_category_repository.exists.assert_called_once()
         mock_item_category_repository.exists_by_name_and_category.assert_called_once()
-        mock_item_category_repository.save_subcategory.assert_called_once()
+        mock_item_category_repository.save.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_category_use_case(self, sample_category):
         """Test getting category by ID"""
-        category_id = uuid4()
+        category_id = str(uuid4())
         mock_repository = Mock()
         mock_repository.find_by_id = AsyncMock(return_value=sample_category)
         
@@ -203,7 +203,7 @@ class TestItemCategoryUseCases:
     @pytest.mark.asyncio
     async def test_update_category_use_case(self, sample_category, mock_item_category_repository):
         """Test updating category"""
-        category_id = uuid4()
+        category_id = str(uuid4())
         new_name = "Updated Category Name"
         
         mock_item_category_repository.find_by_id.return_value = sample_category
@@ -220,7 +220,7 @@ class TestItemCategoryUseCases:
     @pytest.mark.asyncio
     async def test_delete_category_use_case(self, mock_item_category_repository):
         """Test deleting category"""
-        category_id = uuid4()
+        category_id = str(uuid4())
         mock_item_category_repository.delete.return_value = True
         
         use_case = DeleteItemCategoryUseCase(mock_item_category_repository)
@@ -272,7 +272,7 @@ class TestItemCategoryService:
         mock_item_category_repository.exists.return_value = True
         mock_item_category_repository.exists_by_name_and_category.return_value = False
         mock_item_category_repository.exists_by_abbreviation.return_value = False
-        mock_item_category_repository.save_subcategory.return_value = ItemSubCategory(
+        mock_item_category_repository.save.return_value = ItemSubCategory(
             name=sample_subcategory_data["name"],
             abbreviation=sample_subcategory_data["abbreviation"],
             item_category_id=sample_category.id
@@ -286,14 +286,14 @@ class TestItemCategoryService:
         )
         
         assert result.name == sample_subcategory_data["name"]
-        mock_item_category_repository.save_subcategory.assert_called_once()
+        mock_item_category_repository.save.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_category_with_subcategories_service(self, sample_category, sample_subcategory, mock_item_category_repository):
         """Test getting category with subcategories through service"""
-        category_id = uuid4()
+        category_id = str(uuid4())
         mock_item_category_repository.find_by_id.return_value = sample_category
-        mock_item_category_repository.find_subcategories_by_category.return_value = [sample_subcategory]
+        mock_item_category_repository.find_by_category.return_value = [sample_subcategory]
         
         service = ItemCategoryService(mock_item_category_repository)
         category_result, subcategories_result = await service.get_category_with_subcategories(category_id)
@@ -301,7 +301,7 @@ class TestItemCategoryService:
         assert category_result == sample_category
         assert subcategories_result == [sample_subcategory]
         mock_item_category_repository.find_by_id.assert_called_once_with(category_id)
-        mock_item_category_repository.find_subcategories_by_category.assert_called_once_with(category_id)
+        mock_item_category_repository.find_by_category.assert_called_once_with(category_id, 0, 100)
 
     @pytest.mark.asyncio
     async def test_list_categories_service(self, sample_category):

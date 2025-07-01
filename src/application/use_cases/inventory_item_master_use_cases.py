@@ -1,5 +1,5 @@
 from typing import List, Optional
-from uuid import UUID
+
 from decimal import Decimal
 
 from ...domain.entities.inventory_item_master import InventoryItemMaster
@@ -14,13 +14,13 @@ class CreateInventoryItemMasterUseCase:
         self,
         name: str,
         sku: str,
-        item_sub_category_id: UUID,
-        unit_of_measurement_id: UUID,
+        item_sub_category_id: str,
+        unit_of_measurement_id: str,
         tracking_type: str,
         is_consumable: bool = False,
         description: Optional[str] = None,
         contents: Optional[str] = None,
-        packaging_id: Optional[UUID] = None,
+        packaging_id: Optional[str] = None,
         brand: Optional[str] = None,
         manufacturer_part_number: Optional[str] = None,
         product_id: Optional[str] = None,
@@ -69,7 +69,7 @@ class GetInventoryItemMasterUseCase:
     def __init__(self, repository: InventoryItemMasterRepository) -> None:
         self.repository = repository
 
-    async def execute(self, inventory_item_id: UUID) -> Optional[InventoryItemMaster]:
+    async def execute(self, inventory_item_id: str) -> Optional[InventoryItemMaster]:
         return await self.repository.find_by_id(inventory_item_id)
 
 
@@ -87,14 +87,14 @@ class UpdateInventoryItemMasterUseCase:
 
     async def execute(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         name: Optional[str] = None,
         sku: Optional[str] = None,
         description: Optional[str] = None,
         contents: Optional[str] = None,
-        item_sub_category_id: Optional[UUID] = None,
-        unit_of_measurement_id: Optional[UUID] = None,
-        packaging_id: Optional[UUID] = None,
+        item_sub_category_id: Optional[str] = None,
+        unit_of_measurement_id: Optional[str] = None,
+        packaging_id: Optional[str] = None,
         tracking_type: Optional[str] = None,
         is_consumable: Optional[bool] = None,
         brand: Optional[str] = None,
@@ -166,7 +166,7 @@ class DeleteInventoryItemMasterUseCase:
     def __init__(self, repository: InventoryItemMasterRepository) -> None:
         self.repository = repository
 
-    async def execute(self, inventory_item_id: UUID) -> bool:
+    async def execute(self, inventory_item_id: str) -> bool:
         return await self.repository.delete(inventory_item_id)
 
 
@@ -182,7 +182,7 @@ class ListInventoryItemMastersBySubcategoryUseCase:
     def __init__(self, repository: InventoryItemMasterRepository) -> None:
         self.repository = repository
 
-    async def execute(self, subcategory_id: UUID, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
+    async def execute(self, subcategory_id: str, skip: int = 0, limit: int = 100) -> List[InventoryItemMaster]:
         return await self.repository.find_by_subcategory(subcategory_id, skip, limit)
 
 
@@ -214,7 +214,7 @@ class UpdateInventoryItemMasterQuantityUseCase:
     def __init__(self, repository: InventoryItemMasterRepository) -> None:
         self.repository = repository
 
-    async def execute(self, inventory_item_id: UUID, new_quantity: int) -> bool:
+    async def execute(self, inventory_item_id: str, new_quantity: int) -> bool:
         return await self.repository.update_quantity(inventory_item_id, new_quantity)
 
 
@@ -224,7 +224,7 @@ class UpdateInventoryItemMasterDimensionsUseCase:
 
     async def execute(
         self,
-        inventory_item_id: UUID,
+        inventory_item_id: str,
         weight: Optional[Decimal] = None,
         length: Optional[Decimal] = None,
         width: Optional[Decimal] = None,

@@ -1,7 +1,6 @@
 import re
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
 
 from .base_entity import BaseEntity
 from ..value_objects.address import Address
@@ -17,7 +16,7 @@ class Customer(BaseEntity):
         city: Optional[str] = None,
         # Backward compatibility with Address value object
         address_vo: Optional[Address] = None,
-        customer_id: Optional[UUID] = None,
+        customer_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,

@@ -5,7 +5,6 @@ items being returned within a sales return.
 """
 
 from typing import List, Optional
-from uuid import UUID
 
 from src.domain.entities.base_entity import BaseEntity
 
@@ -20,8 +19,8 @@ class SalesReturnItem(BaseEntity):
     
     def __init__(
         self,
-        sales_return_id: UUID,
-        sales_item_id: UUID,
+        sales_return_id: str,
+        sales_item_id: str,
         quantity: int,
         condition: str,
         serial_numbers: Optional[List[str]] = None,

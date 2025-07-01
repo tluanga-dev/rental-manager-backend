@@ -4,14 +4,12 @@ This module defines FastAPI endpoints for purchase transaction operations.
 """
 
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from src.application.services.purchase_transaction_service import PurchaseTransactionService
 from src.core.config.database import get_db_session
-from src.domain.value_objects.purchase.purchase_status import PurchaseStatus
 from src.infrastructure.repositories.purchase_transaction_repository_impl import SQLAlchemyPurchaseTransactionRepository
 from src.infrastructure.repositories.purchase_transaction_item_repository_impl import SQLAlchemyPurchaseTransactionItemRepository
 from src.infrastructure.repositories.vendor_repository_impl import SQLAlchemyVendorRepository
@@ -23,7 +21,6 @@ from ..schemas.purchase_transaction_schemas import (
     PurchaseTransactionCreateSchema,
     PurchaseTransactionCreateWithItemsSchema,
     PurchaseTransactionUpdateSchema,
-    PurchaseTransactionStatusUpdateSchema,
     PurchaseTransactionResponseSchema,
     PurchaseTransactionWithItemsResponseSchema,
     PurchaseTransactionListResponseSchema,
@@ -67,7 +64,6 @@ def transaction_to_response_schema(transaction) -> PurchaseTransactionResponseSc
         transaction_id=transaction.transaction_id,
         transaction_date=transaction.transaction_date,
         vendor_id=transaction.vendor_id,
-        status=transaction.status.value,
         total_amount=transaction.total_amount,
         grand_total=transaction.grand_total,
         purchase_order_number=transaction.purchase_order_number,
@@ -162,8 +158,7 @@ async def create_transaction_with_items(
 async def get_transactions(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Page size"),
-    vendor_id: Optional[UUID] = Query(None, description="Filter by vendor ID"),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    vendor_id: Optional[str] = Query(None, description="Filter by vendor ID"),
     date_from: Optional[str] = Query(None, description="Filter by date from (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Filter by date to (YYYY-MM-DD)"),
     purchase_order_number: Optional[str] = Query(None, description="Filter by purchase order number"),
@@ -190,7 +185,6 @@ async def get_transactions(
             page=page,
             page_size=page_size,
             vendor_id=vendor_id,
-            status=status,
             date_from=date_from_obj,
             date_to=date_to_obj,
             purchase_order_number=purchase_order_number,
@@ -213,7 +207,7 @@ async def get_transactions(
 
 @router.get("/{transaction_id}/", response_model=PurchaseTransactionWithItemsResponseSchema)
 async def get_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> PurchaseTransactionWithItemsResponseSchema:
     """Get a purchase transaction with its items."""
@@ -267,7 +261,7 @@ async def get_transaction_by_transaction_id(
 
 @router.put("/{transaction_id}/")
 async def update_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     transaction_data: PurchaseTransactionUpdateSchema,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
@@ -291,30 +285,11 @@ async def update_transaction(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
-@router.patch("/{transaction_id}/status/")
-async def update_transaction_status(
-    transaction_id: UUID,
-    status_data: PurchaseTransactionStatusUpdateSchema,
-    service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
-) -> Dict[str, Any]:
-    """Update purchase transaction status."""
-    try:
-        new_status = PurchaseStatus(status_data.status)
-        transaction = await service.update_transaction_status(transaction_id, new_status)
-        
-        return {
-            "transaction": transaction_to_response_schema(transaction),
-            "message": f"Purchase transaction status updated to {new_status.value}"
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.delete("/{transaction_id}/")
 async def delete_transaction(
-    transaction_id: UUID,
+    transaction_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
     """Delete (soft delete) a purchase transaction."""
@@ -342,8 +317,7 @@ async def search_transactions(
     try:
         transactions = await service.search_transactions(
             query=search_data.query,
-            vendor_id=search_data.vendor_id,
-            status=search_data.status
+            vendor_id=search_data.vendor_id
         )
         
         # Limit results
@@ -364,7 +338,7 @@ async def search_transactions(
 
 @router.get("/{transaction_id}/summary/", response_model=PurchaseTransactionItemSummarySchema)
 async def get_transaction_summary(
-    transaction_id: UUID,
+    transaction_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> PurchaseTransactionItemSummarySchema:
     """Get purchase transaction item summary."""
@@ -391,7 +365,7 @@ async def get_transaction_statistics(
 
 @router.get("/{transaction_id}/items/")
 async def get_transaction_items(
-    transaction_id: UUID,
+    transaction_id: str,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
@@ -414,8 +388,8 @@ async def get_transaction_items(
 
 @router.get("/{transaction_id}/items/{item_id}/", response_model=PurchaseTransactionItemResponseSchema)
 async def get_transaction_item(
-    transaction_id: UUID,
-    item_id: UUID,
+    transaction_id: str,
+    item_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> PurchaseTransactionItemResponseSchema:
     """Get a specific transaction item."""
@@ -433,7 +407,7 @@ async def get_transaction_item(
 
 @router.post("/{transaction_id}/items/")
 async def create_transaction_item(
-    transaction_id: UUID,
+    transaction_id: str,
     item_data: PurchaseTransactionItemCreateSchema,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
@@ -465,7 +439,7 @@ async def create_transaction_item(
 
 @router.post("/{transaction_id}/items/bulk/", response_model=BulkCreateItemsResponseSchema)
 async def bulk_create_transaction_items(
-    transaction_id: UUID,
+    transaction_id: str,
     bulk_data: BulkCreateItemsSchema,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> BulkCreateItemsResponseSchema:
@@ -497,8 +471,8 @@ async def bulk_create_transaction_items(
 
 @router.put("/{transaction_id}/items/{item_id}/")
 async def update_transaction_item(
-    transaction_id: UUID,
-    item_id: UUID,
+    transaction_id: str,
+    item_id: str,
     item_data: PurchaseTransactionItemUpdateSchema,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
@@ -526,8 +500,8 @@ async def update_transaction_item(
 
 @router.delete("/{transaction_id}/items/{item_id}/")
 async def delete_transaction_item(
-    transaction_id: UUID,
-    item_id: UUID,
+    transaction_id: str,
+    item_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
     """Delete a transaction item."""
@@ -548,8 +522,8 @@ async def delete_transaction_item(
 
 @router.get("/{transaction_id}/items/{item_id}/summary/")
 async def get_transaction_item_summary(
-    transaction_id: UUID,
-    item_id: UUID,
+    transaction_id: str,
+    item_id: str,
     service: PurchaseTransactionService = Depends(get_purchase_transaction_service)
 ) -> Dict[str, Any]:
     """Get transaction item summary (placeholder endpoint for frontend compatibility)."""

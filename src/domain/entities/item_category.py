@@ -1,5 +1,4 @@
 from typing import Optional, List
-from uuid import UUID
 from datetime import datetime
 
 from .base_entity import BaseEntity
@@ -11,7 +10,7 @@ class ItemCategory(BaseEntity):
         name: str,
         abbreviation: str,
         description: Optional[str] = None,
-        category_id: Optional[UUID] = None,
+        category_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
@@ -107,9 +106,9 @@ class ItemSubCategory(BaseEntity):
         self,
         name: str,
         abbreviation: str,
-        item_category_id: UUID,
+        item_category_id: str,
         description: Optional[str] = None,
-        subcategory_id: Optional[UUID] = None,
+        subcategory_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
         updated_at: Optional[datetime] = None,
         created_by: Optional[str] = None,
@@ -130,7 +129,7 @@ class ItemSubCategory(BaseEntity):
         return self._abbreviation
 
     @property
-    def item_category_id(self) -> UUID:
+    def item_category_id(self) -> str:
         return self._item_category_id
 
     @property
@@ -152,7 +151,7 @@ class ItemSubCategory(BaseEntity):
         self._description = description
         self._touch_updated_at()
 
-    def update_category(self, item_category_id: UUID) -> None:
+    def update_category(self, item_category_id: str) -> None:
         """Update parent category."""
         self._item_category_id = item_category_id
         self._touch_updated_at()

@@ -5,7 +5,7 @@ This module defines the use case for updating payment information on a sales tra
 
 from decimal import Decimal
 from typing import Optional
-from uuid import UUID
+
 import logging
 
 from src.domain.entities.sales import SalesTransaction
@@ -24,7 +24,7 @@ class UpdatePaymentUseCase:
     
     async def execute(
         self,
-        transaction_id: UUID,
+        transaction_id: str,
         amount_paid: Decimal,
         payment_notes: Optional[str] = None,
         updated_by: Optional[str] = None

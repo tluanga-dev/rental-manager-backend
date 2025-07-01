@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict, Any
-from uuid import UUID
 
 from ...domain.entities.contact_number import ContactNumber
 from ...domain.repositories.contact_number_repository import ContactNumberRepository
@@ -14,7 +13,7 @@ class CreateContactNumberUseCase:
         self, 
         number: str, 
         entity_type: str, 
-        entity_id: UUID, 
+        entity_id: str, 
         created_by: Optional[str] = None
     ) -> ContactNumber:
         # Validate phone number
@@ -37,7 +36,7 @@ class GetContactNumberUseCase:
     def __init__(self, contact_repository: ContactNumberRepository) -> None:
         self.contact_repository = contact_repository
 
-    async def execute(self, contact_id: UUID) -> Optional[ContactNumber]:
+    async def execute(self, contact_id: str) -> Optional[ContactNumber]:
         return await self.contact_repository.find_by_id(contact_id)
 
 
@@ -53,7 +52,7 @@ class GetEntityContactNumbersUseCase:
     def __init__(self, contact_repository: ContactNumberRepository) -> None:
         self.contact_repository = contact_repository
 
-    async def execute(self, entity_type: str, entity_id: UUID) -> List[ContactNumber]:
+    async def execute(self, entity_type: str, entity_id: str) -> List[ContactNumber]:
         return await self.contact_repository.find_by_entity(entity_type, entity_id)
 
 
@@ -71,10 +70,10 @@ class UpdateContactNumberUseCase:
 
     async def execute(
         self, 
-        contact_id: UUID, 
+        contact_id: str, 
         number: Optional[str] = None,
         entity_type: Optional[str] = None,
-        entity_id: Optional[UUID] = None,
+        entity_id: Optional[str] = None,
         is_active: Optional[bool] = None
     ) -> ContactNumber:
         contact_number = await self.contact_repository.find_by_id(contact_id)
@@ -101,7 +100,7 @@ class DeleteContactNumberUseCase:
     def __init__(self, contact_repository: ContactNumberRepository) -> None:
         self.contact_repository = contact_repository
 
-    async def execute(self, contact_id: UUID) -> bool:
+    async def execute(self, contact_id: str) -> bool:
         return await self.contact_repository.delete(contact_id)
 
 
@@ -117,7 +116,7 @@ class GetEntityContactSummaryUseCase:
     def __init__(self, contact_repository: ContactNumberRepository) -> None:
         self.contact_repository = contact_repository
 
-    async def execute(self, entity_type: str, entity_id: UUID) -> Dict[str, Any]:
+    async def execute(self, entity_type: str, entity_id: str) -> Dict[str, Any]:
         return await self.contact_repository.get_entity_contact_summary(entity_type, entity_id)
 
 

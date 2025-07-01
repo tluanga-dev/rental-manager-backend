@@ -1,5 +1,4 @@
 from typing import List, Optional
-from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -122,7 +121,7 @@ async def create_customer(
 
 @router.get("/{customer_id}", response_model=CustomerResponseSchema)
 async def get_customer(
-    customer_id: UUID,
+    customer_id: str,
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     customer = await customer_service.get_customer(customer_id)
@@ -134,7 +133,7 @@ async def get_customer(
 
 @router.put("/{customer_id}", response_model=CustomerResponseSchema)
 async def update_customer(
-    customer_id: UUID,
+    customer_id: str,
     customer_data: CustomerUpdateSchema,
     customer_service: CustomerService = Depends(get_customer_service),
 ):
@@ -168,7 +167,7 @@ async def update_customer(
 
 @router.delete("/{customer_id}", status_code=204)
 async def delete_customer(
-    customer_id: UUID,
+    customer_id: str,
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     deleted = await customer_service.delete_customer(customer_id)
@@ -231,7 +230,7 @@ async def get_customers_by_city(
 
 @router.get("/{customer_id}/contacts", response_model=List[ContactNumberResponseSchema])
 async def get_customer_contacts(
-    customer_id: UUID,
+    customer_id: str,
     customer_service: CustomerService = Depends(get_customer_service),
 ):
     """Get all contact numbers for a customer."""
@@ -257,7 +256,7 @@ async def get_customer_contacts(
 
 @router.put("/{customer_id}/contacts", response_model=List[ContactNumberResponseSchema])
 async def update_customer_contacts(
-    customer_id: UUID,
+    customer_id: str,
     contact_data: CustomerContactUpdateSchema,
     customer_service: CustomerService = Depends(get_customer_service),
 ):
@@ -291,7 +290,7 @@ async def update_customer_contacts(
 
 @router.delete("/{customer_id}/contacts/{contact_number}", status_code=204)
 async def remove_customer_contact(
-    customer_id: UUID,
+    customer_id: str,
     contact_number: str,
     customer_service: CustomerService = Depends(get_customer_service),
 ):

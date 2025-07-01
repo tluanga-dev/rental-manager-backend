@@ -1,5 +1,4 @@
 from typing import List
-from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -36,14 +35,14 @@ async def create_warehouse(
             remarks=warehouse_data.remarks,
             created_by=warehouse_data.created_by,
         )
-        return WarehouseResponse.from_orm(warehouse)
+        return WarehouseResponse.model_validate(warehouse)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/{warehouse_id}", response_model=WarehouseResponse)
 async def get_warehouse(
-    warehouse_id: UUID,
+    warehouse_id: str,
     use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
 ):
     """Get warehouse by ID"""
@@ -99,7 +98,7 @@ async def list_warehouses(
         "count": total_count,
         "next": next_url,
         "previous": previous_url,
-        "results": [WarehouseResponse.from_orm(w).dict() for w in warehouses]
+        "results": [WarehouseResponse.model_validate(w).model_dump() for w in warehouses]
     }
 
 
@@ -112,7 +111,7 @@ async def search_warehouses(
 ):
     """Search warehouses by name"""
     warehouses = await use_cases.search_warehouses(name, skip, limit)
-    return [WarehouseResponse.from_orm(warehouse) for warehouse in warehouses]
+    return [WarehouseResponse.model_validate(warehouse) for warehouse in warehouses]
 
 
 @router.get("/label/{label}", response_model=WarehouseResponse)
@@ -129,7 +128,7 @@ async def get_warehouse_by_label(
 
 @router.put("/{warehouse_id}", response_model=WarehouseResponse)
 async def update_warehouse(
-    warehouse_id: UUID,
+    warehouse_id: str,
     warehouse_data: WarehouseUpdate,
     use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
 ):
@@ -141,14 +140,14 @@ async def update_warehouse(
             label=warehouse_data.label,
             remarks=warehouse_data.remarks,
         )
-        return WarehouseResponse.from_orm(warehouse)
+        return WarehouseResponse.model_validate(warehouse)
     except ValueError as e:
         raise HTTPException(status_code=404 if "not found" in str(e) else 400, detail=str(e))
 
 
 @router.patch("/{warehouse_id}/deactivate", status_code=204)
 async def deactivate_warehouse(
-    warehouse_id: UUID,
+    warehouse_id: str,
     use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
 ):
     """Deactivate a warehouse (soft delete)"""
@@ -160,7 +159,7 @@ async def deactivate_warehouse(
 
 @router.patch("/{warehouse_id}/activate", status_code=204)
 async def activate_warehouse(
-    warehouse_id: UUID,
+    warehouse_id: str,
     use_cases: WarehouseUseCases = Depends(get_warehouse_use_cases),
 ):
     """Activate a warehouse"""
@@ -177,7 +176,7 @@ async def get_warehouse_stats(
     """Get warehouse statistics for overview"""
     try:
         # Get all active warehouses to calculate stats
-        all_warehouses = await use_cases.list_warehouses(skip=0, limit=10000, active_only=True)
+        all_warehouses = await use_cases.list_warehouses(0, 10000, active_only=True)
         
         total_warehouses = len(all_warehouses)
         warehouses_with_remarks = len([w for w in all_warehouses if w.remarks and w.remarks.strip()])
